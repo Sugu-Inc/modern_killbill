@@ -7,6 +7,12 @@
 
 **Philosophy**: "Simplicity is the ultimate sophistication" - Focus on core billing needs with 20% of features delivering 80% of business value. Modern approach prioritizing developer experience, customer satisfaction, and operational efficiency.
 
+## Clarifications
+
+### Session 2025-11-19
+
+- Q: What is the target system availability/uptime SLA? → A: 99.9% uptime (43 minutes downtime/month)
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -638,6 +644,7 @@
 - **SC-040**: Cloud costs under $1,000 per month for 10,000 active subscriptions
 - **SC-041**: Database backup and restore completes in under 30 minutes
 - **SC-042**: Monitoring detects 100% of critical errors within 5 minutes
+- **SC-051**: System maintains 99.9% uptime (maximum 43 minutes downtime per month)
 
 #### Compliance & Security
 
