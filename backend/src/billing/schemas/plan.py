@@ -72,3 +72,7 @@ class PlanList(BaseModel):
     total: int
     page: int
     page_size: int
+
+
+# Backward compatibility alias
+PlanTier = UsageTier

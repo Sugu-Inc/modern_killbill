@@ -240,18 +240,18 @@
 
 ### Tests for US7
 
-- [ ] T083 [P] [US7] Integration test for usage tracking in backend/tests/integration/test_usage.py (test_submit_usage_event_with_idempotency, test_usage_charge_calculation_with_tiers, test_late_usage_generates_supplemental_invoice) [FYI]
-- [ ] T084 [P] [US7] Integration test for usage deduplication in backend/tests/integration/test_usage.py (test_duplicate_usage_events_ignored) [FYI]
+- [x] T083 [P] [US7] Integration test for usage tracking in backend/tests/integration/test_usage.py (test_submit_usage_event_with_idempotency, test_usage_charge_calculation_with_tiers, test_late_usage_generates_supplemental_invoice) [FYI]
+- [x] T084 [P] [US7] Integration test for usage deduplication in backend/tests/integration/test_usage.py (test_duplicate_usage_events_ignored) [FYI]
 
 ### Implementation for US7
 
-- [ ] T085 [P] [US7] Create UsageRecord model in backend/src/billing/models/usage_record.py (UUID id, subscription_id FK, metric, quantity, timestamp, idempotency_key unique, metadata JSONB, created_at) [FYI]
-- [ ] T086 [P] [US7] Create Pydantic schemas in backend/src/billing/schemas/usage_record.py (UsageRecordCreate, UsageRecordResponse) [FYI]
-- [ ] T087 [US7] Create Alembic migration for usage_records table (indexes on subscription_id, timestamp, unique index on idempotency_key) [Review - Low risk]
-- [ ] T088 [US7] Implement UsageService in backend/src/billing/services/usage_service.py (record_usage with deduplication, aggregate_usage_for_period, calculate_tiered_charges) [Review - High risk]
-- [ ] T089 [US7] Integrate usage charge calculation into InvoiceService in backend/src/billing/services/invoice_service.py (add usage line items to invoice) [Review - High risk]
-- [ ] T090 [US7] Implement POST /v1/usage endpoint in backend/src/billing/api/v1/usage.py (submit usage events with idempotency_key) [Review - Low risk]
-- [ ] T091 [US7] Implement GET /v1/subscriptions/{subscription_id}/usage endpoint in backend/src/billing/api/v1/subscriptions.py (query usage for period) [FYI]
+- [x] T085 [P] [US7] Create UsageRecord model in backend/src/billing/models/usage_record.py (UUID id, subscription_id FK, metric, quantity, timestamp, idempotency_key unique, metadata JSONB, created_at) [FYI]
+- [x] T086 [P] [US7] Create Pydantic schemas in backend/src/billing/schemas/usage_record.py (UsageRecordCreate, UsageRecordResponse) [FYI]
+- [x] T087 [US7] Create Alembic migration for usage_records table (indexes on subscription_id, timestamp, unique index on idempotency_key) [Review - Low risk]
+- [x] T088 [US7] Implement UsageService in backend/src/billing/services/usage_service.py (record_usage with deduplication, aggregate_usage_for_period, calculate_tiered_charges) [Review - High risk]
+- [x] T089 [US7] Integrate usage charge calculation into InvoiceService in backend/src/billing/services/invoice_service.py (add usage line items to invoice) [Review - High risk]
+- [x] T090 [US7] Implement POST /v1/usage endpoint in backend/src/billing/api/v1/usage.py (submit usage events with idempotency_key) [Review - Low risk]
+- [x] T091 [US7] Implement GET /v1/subscriptions/{subscription_id}/usage endpoint in backend/src/billing/api/v1/subscriptions.py (query usage for period) [FYI]
 - [ ] T092 [US7] Implement background job for late usage processing in backend/src/billing/workers/usage_finalizer.py (generate supplemental invoices for usage arriving after period close, within 7-day window) [Review - High risk]
 
 **Checkpoint**: US7 complete - usage tracking works, tier billing implemented, late usage handled

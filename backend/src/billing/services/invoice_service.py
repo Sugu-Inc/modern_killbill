@@ -102,6 +102,13 @@ class InvoiceService:
             ).model_dump()
         )
 
+        # Add usage charges if plan is usage-based
+        if plan.usage_type and plan.tiers:
+            usage_charges = await self._calculate_usage_charges(
+                subscription_id, period_start, period_end, plan
+            )
+            line_items.extend(usage_charges)
+
         # Calculate subtotal
         subtotal = sum(item["amount"] for item in line_items)
 
@@ -448,6 +455,73 @@ class InvoiceService:
         invoices = result.scalars().all()
 
         return list(invoices), total or 0
+
+    async def _calculate_usage_charges(
+        self,
+        subscription_id: UUID,
+        period_start: datetime,
+        period_end: datetime,
+        plan: Plan,
+    ) -> list[dict]:
+        """
+        Calculate usage charges for a billing period.
+
+        Args:
+            subscription_id: Subscription UUID
+            period_start: Start of billing period
+            period_end: End of billing period
+            plan: Subscription plan with tier configuration
+
+        Returns:
+            List of usage line items
+        """
+        from billing.services.usage_service import UsageService
+
+        usage_service = UsageService(self.db)
+        line_items = []
+
+        # Aggregate usage for all metrics in the period
+        # For simplicity, we'll use a default metric or iterate if multiple exist
+        # In a real system, metrics would be defined per plan
+        metric = "api_calls"  # Default metric, could be plan.usage_metric
+
+        # Get aggregated usage
+        aggregation = await usage_service.aggregate_usage_for_period(
+            subscription_id=subscription_id,
+            metric=metric,
+            period_start=period_start,
+            period_end=period_end,
+        )
+
+        if aggregation.total_quantity > 0:
+            # Convert plan tiers to dict format for calculation
+            tiers_dict = []
+            if plan.tiers:
+                for tier in plan.tiers:
+                    if isinstance(tier, dict):
+                        tiers_dict.append(tier)
+                    else:
+                        # Convert SQLAlchemy model to dict
+                        tiers_dict.append({
+                            "up_to": tier.get("up_to"),
+                            "unit_amount": tier.get("unit_amount"),
+                        })
+
+            # Calculate tiered charges
+            usage_charge = await usage_service.calculate_tiered_charges(
+                total_quantity=aggregation.total_quantity,
+                tiers=tiers_dict,
+            )
+
+            if usage_charge > 0:
+                line_items.append({
+                    "description": f"Usage: {metric} ({aggregation.total_quantity} units)",
+                    "amount": usage_charge,
+                    "quantity": aggregation.total_quantity,
+                    "type": "usage",
+                })
+
+        return line_items
 
     async def _calculate_tax(self, account: Account, amount: int) -> int:
         """

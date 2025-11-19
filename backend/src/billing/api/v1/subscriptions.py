@@ -252,3 +252,64 @@ async def change_subscription_plan(
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+
+@router.get("/{subscription_id}/usage")
+async def get_subscription_usage(
+    subscription_id: UUID,
+    metric: str | None = Query(None, description="Filter by metric"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """
+    Get usage data for a subscription.
+
+    Returns aggregated usage for the current billing period.
+    - **subscription_id**: Subscription UUID
+    - **metric**: Optional metric filter
+    """
+    from billing.services.usage_service import UsageService
+    from billing.models.subscription import Subscription
+    from sqlalchemy import select
+
+    # Get subscription to determine billing period
+    result = await db.execute(
+        select(Subscription).where(Subscription.id == subscription_id)
+    )
+    subscription = result.scalar_one_or_none()
+
+    if not subscription:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Subscription {subscription_id} not found",
+        )
+
+    service = UsageService(db)
+
+    # Get usage records for current period
+    usage_records, total_count = await service.list_usage_records(
+        subscription_id=subscription_id,
+        metric=metric,
+        start_time=subscription.current_period_start,
+        end_time=subscription.current_period_end,
+        page=1,
+        page_size=1000,
+    )
+
+    # Calculate total quantity
+    total_quantity = sum(record.quantity for record in usage_records)
+
+    return {
+        "subscription_id": str(subscription_id),
+        "items": [
+            {
+                "id": str(record.id),
+                "metric": record.metric,
+                "quantity": record.quantity,
+                "timestamp": record.timestamp.isoformat(),
+                "idempotency_key": record.idempotency_key,
+            }
+            for record in usage_records
+        ],
+        "total_quantity": total_quantity,
+        "total": total_count,
+    }
