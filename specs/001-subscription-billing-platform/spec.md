@@ -39,10 +39,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** no existing account, **When** I create account with email and name, **Then** account is created with auto-detected timezone and default currency
-2. **Given** an account, **When** I add payment method via secure token, **Then** payment method is stored and verified without manual configuration
-3. **Given** an account, **When** I retrieve account details, **Then** I get account info with masked payment method in single request
-4. **Given** duplicate email, **When** I create account, **Then** system creates separate account (emails are not unique identifiers, external_key is)
+1. **Given** no existing account, **When** I create account with email and name, **Then** account is created with auto-detected timezone and default currency **[FYI]**
+2. **Given** an account, **When** I add payment method via secure token, **Then** payment method is stored and verified without manual configuration **[Review - High risk]**
+3. **Given** an account, **When** I retrieve account details, **Then** I get account info with masked payment method in single request **[FYI]**
+4. **Given** duplicate email, **When** I create account, **Then** system creates separate account (emails are not unique identifiers, external_key is) **[FYI]**
 
 ---
 
@@ -58,10 +58,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** no plans exist, **When** I create plan with monthly and annual pricing, **Then** plan is available for subscriptions with both billing periods
-2. **Given** a plan with trial, **When** I set trial period of 14 days, **Then** subscriptions start with trial before first charge
-3. **Given** a usage-based plan, **When** I define base price plus metered usage with tiers, **Then** system bills base plus usage
-4. **Given** existing subscriptions on old plan, **When** I create plan v2, **Then** old subscriptions continue on v1 pricing (automatic grandfathering)
+1. **Given** no plans exist, **When** I create plan with monthly and annual pricing, **Then** plan is available for subscriptions with both billing periods **[Review - High risk]**
+2. **Given** a plan with trial, **When** I set trial period of 14 days, **Then** subscriptions start with trial before first charge **[Review - High risk]**
+3. **Given** a usage-based plan, **When** I define base price plus metered usage with tiers, **Then** system bills base plus usage **[Review - High risk]**
+4. **Given** existing subscriptions on old plan, **When** I create plan v2, **Then** old subscriptions continue on v1 pricing (automatic grandfathering) **[Review - High risk]**
 
 ---
 
@@ -77,10 +77,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** account with payment method and plan, **When** I create subscription, **Then** subscription is created, first invoice generated, and payment attempted in single transaction
-2. **Given** a plan with trial, **When** subscription is created, **Then** status is TRIAL and no payment attempted until trial ends
-3. **Given** active subscription, **When** billing date arrives, **Then** invoice auto-generated and payment auto-attempted (no manual triggers needed)
-4. **Given** subscription, **When** customer cancels, **Then** subscription status changes to CANCELLED and next billing is prevented
+1. **Given** account with payment method and plan, **When** I create subscription, **Then** subscription is created, first invoice generated, and payment attempted in single transaction **[Review - High risk]**
+2. **Given** a plan with trial, **When** subscription is created, **Then** status is TRIAL and no payment attempted until trial ends **[Review - High risk]**
+3. **Given** active subscription, **When** billing date arrives, **Then** invoice auto-generated and payment auto-attempted (no manual triggers needed) **[Review - High risk]**
+4. **Given** subscription, **When** customer cancels, **Then** subscription status changes to CANCELLED and next billing is prevented **[Review - High risk]**
 
 ---
 
@@ -96,10 +96,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** subscription with billing date today, **When** billing job runs, **Then** invoice is created with line items, tax calculated, and notification sent to customer
-2. **Given** subscription upgrade mid-cycle, **When** change occurs, **Then** invoice shows prorated credit for old plan and prorated charge for new plan automatically
-3. **Given** invoice with amount due, **When** I apply account credit, **Then** invoice balance reduces and credit is tracked
-4. **Given** incorrect invoice, **When** I void invoice, **Then** new invoice is generated and customer is notified of correction
+1. **Given** subscription with billing date today, **When** billing job runs, **Then** invoice is created with line items, tax calculated, and notification sent to customer **[Review - High risk]**
+2. **Given** subscription upgrade mid-cycle, **When** change occurs, **Then** invoice shows prorated credit for old plan and prorated charge for new plan automatically **[Review - High risk]**
+3. **Given** invoice with amount due, **When** I apply account credit, **Then** invoice balance reduces and credit is tracked **[Review - High risk]**
+4. **Given** incorrect invoice, **When** I void invoice, **Then** new invoice is generated and customer is notified of correction **[Review - High risk]**
 
 ---
 
@@ -115,10 +115,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** invoice due, **When** invoice is created, **Then** payment is automatically attempted with duplicate charge prevention
-2. **Given** payment failure (card declined), **When** failure occurs, **Then** system schedules retries at day 3, 5, 7, 10 and notifies customer each time
-3. **Given** successful payment, **When** payment completes, **Then** invoice marked PAID, customer receives receipt, notification sent to application
-4. **Given** all retries failed, **When** retry schedule exhausted, **Then** account enters OVERDUE status and subscription is blocked from access
+1. **Given** invoice due, **When** invoice is created, **Then** payment is automatically attempted with duplicate charge prevention **[Review - High risk]**
+2. **Given** payment failure (card declined), **When** failure occurs, **Then** system schedules retries at day 3, 5, 7, 10 and notifies customer each time **[Review - High risk]**
+3. **Given** successful payment, **When** payment completes, **Then** invoice marked PAID, customer receives receipt, notification sent to application **[Review - High risk]**
+4. **Given** all retries failed, **When** retry schedule exhausted, **Then** account enters OVERDUE status and subscription is blocked from access **[Review - High risk]**
 
 ---
 
@@ -134,10 +134,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** active subscription on Starter ($49/mo), **When** customer upgrades to Pro ($99/mo) on day 15 of month, **Then** system generates invoice with prorated credit and charge
-2. **Given** subscription on annual plan, **When** customer downgrades to monthly, **Then** remaining annual credit is calculated and applied to monthly billing
-3. **Given** downgrade request, **When** customer selects "end of period", **Then** downgrade is scheduled and customer continues on current plan until period ends
-4. **Given** plan change, **When** change is processed, **Then** customer receives confirmation with prorated charges explained clearly
+1. **Given** active subscription on Starter ($49/mo), **When** customer upgrades to Pro ($99/mo) on day 15 of month, **Then** system generates invoice with prorated credit and charge **[Review - High risk]**
+2. **Given** subscription on annual plan, **When** customer downgrades to monthly, **Then** remaining annual credit is calculated and applied to monthly billing **[Review - High risk]**
+3. **Given** downgrade request, **When** customer selects "end of period", **Then** downgrade is scheduled and customer continues on current plan until period ends **[Review - Low risk]**
+4. **Given** plan change, **When** change is processed, **Then** customer receives confirmation with prorated charges explained clearly **[FYI]**
 
 ---
 
@@ -153,10 +153,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** a usage-based plan, **When** I submit usage events with unique identifiers, **Then** usage is tracked and deduplicated
-2. **Given** usage data for billing period, **When** invoice is generated, **Then** usage charges are calculated from tiers (0-1K free, 1K-10K at $0.01, 10K+ at $0.005)
-3. **Given** late usage data, **When** data arrives after invoice sent, **Then** supplemental invoice is auto-generated and sent within 24 hours
-4. **Given** usage plus base subscription, **When** invoice is generated, **Then** invoice shows base fee plus usage charges with clear breakdown
+1. **Given** a usage-based plan, **When** I submit usage events with unique identifiers, **Then** usage is tracked and deduplicated **[Review - High risk]**
+2. **Given** usage data for billing period, **When** invoice is generated, **Then** usage charges are calculated from tiers (0-1K free, 1K-10K at $0.01, 10K+ at $0.005) **[Review - High risk]**
+3. **Given** late usage data, **When** data arrives after invoice sent, **Then** supplemental invoice is auto-generated and sent within 24 hours **[Review - High risk]**
+4. **Given** usage plus base subscription, **When** invoice is generated, **Then** invoice shows base fee plus usage charges with clear breakdown **[Review - High risk]**
 
 ---
 
@@ -172,10 +172,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** invoice 3 days past due, **When** overdue check runs, **Then** customer receives friendly reminder "Payment failed, please update card"
-2. **Given** invoice 7 days past due, **When** check runs, **Then** customer receives urgent notification "Service may be interrupted" and account status is WARNING
-3. **Given** invoice 14 days past due, **When** check runs, **Then** account status is BLOCKED, service access is restricted, and customer receives "Service suspended" notification
-4. **Given** blocked account, **When** customer pays, **Then** account is immediately unblocked, service restored, and customer receives "Welcome back" notification
+1. **Given** invoice 3 days past due, **When** overdue check runs, **Then** customer receives friendly reminder "Payment failed, please update card" **[FYI]**
+2. **Given** invoice 7 days past due, **When** check runs, **Then** customer receives urgent notification "Service may be interrupted" and account status is WARNING **[Review - Low risk]**
+3. **Given** invoice 14 days past due, **When** check runs, **Then** account status is BLOCKED, service access is restricted, and customer receives "Service suspended" notification **[Review - Low risk]**
+4. **Given** blocked account, **When** customer pays, **Then** account is immediately unblocked, service restored, and customer receives "Welcome back" notification **[Review - Low risk]**
 
 ---
 
@@ -191,10 +191,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** a customer complaint, **When** I create credit with amount and reason, **Then** credit is added and automatically applied to next invoice
-2. **Given** incorrect charge, **When** I void invoice and create credit, **Then** customer receives refund or credit balance based on payment status
-3. **Given** account with credit balance, **When** new invoice is generated, **Then** credit is auto-applied and customer only pays remaining balance
-4. **Given** credit request, **When** I apply credit, **Then** customer receives notification explaining the credit
+1. **Given** a customer complaint, **When** I create credit with amount and reason, **Then** credit is added and automatically applied to next invoice **[Review - High risk]**
+2. **Given** incorrect charge, **When** I void invoice and create credit, **Then** customer receives refund or credit balance based on payment status **[Review - High risk]**
+3. **Given** account with credit balance, **When** new invoice is generated, **Then** credit is auto-applied and customer only pays remaining balance **[Review - High risk]**
+4. **Given** credit request, **When** I apply credit, **Then** customer receives notification explaining the credit **[FYI]**
 
 ---
 
@@ -210,10 +210,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** plan with multi-currency pricing, **When** I create account with currency EUR, **Then** customer is billed in EUR for all transactions
-2. **Given** EUR customer, **When** invoice is generated, **Then** amounts display with proper currency formatting and customer is charged in EUR
-3. **Given** payment in EUR, **When** payment is processed, **Then** payment gateway handles currency processing automatically
-4. **Given** 20+ supported currencies, **When** customer selects currency, **Then** plans show pricing in selected currency from predefined price list
+1. **Given** plan with multi-currency pricing, **When** I create account with currency EUR, **Then** customer is billed in EUR for all transactions **[Review - Low risk]**
+2. **Given** EUR customer, **When** invoice is generated, **Then** amounts display with proper currency formatting and customer is charged in EUR **[Review - Low risk]**
+3. **Given** payment in EUR, **When** payment is processed, **Then** payment gateway handles currency processing automatically **[Review - Low risk]**
+4. **Given** 20+ supported currencies, **When** customer selects currency, **Then** plans show pricing in selected currency from predefined price list **[FYI]**
 
 ---
 
@@ -229,10 +229,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** event endpoint configured, **When** invoice is created, **Then** notification sent to endpoint with event type and data within 5 seconds
-2. **Given** payment succeeds, **When** payment completes, **Then** payment success notification is sent with payment and invoice details
-3. **Given** notification fails (endpoint down), **When** delivery fails, **Then** system retries 5 times with exponential backoff
-4. **Given** multiple event types, **When** I configure notifications, **Then** I can filter events by category
+1. **Given** event endpoint configured, **When** invoice is created, **Then** notification sent to endpoint with event type and data within 5 seconds **[Review - Low risk]**
+2. **Given** payment succeeds, **When** payment completes, **Then** payment success notification is sent with payment and invoice details **[Review - Low risk]**
+3. **Given** notification fails (endpoint down), **When** delivery fails, **Then** system retries 5 times with exponential backoff **[Review - Low risk]**
+4. **Given** multiple event types, **When** I configure notifications, **Then** I can filter events by category **[FYI]**
 
 ---
 
@@ -248,10 +248,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** customer in taxable jurisdiction, **When** invoice is generated, **Then** system calculates appropriate tax and adds to invoice
-2. **Given** tax-exempt customer, **When** I set account tax-exempt flag, **Then** no tax is calculated on invoices
-3. **Given** EU customer with VAT ID, **When** invoice is generated, **Then** system validates VAT ID and applies reverse charge if valid
-4. **Given** tax rate change, **When** invoice is generated, **Then** current tax rate is used automatically
+1. **Given** customer in taxable jurisdiction, **When** invoice is generated, **Then** system calculates appropriate tax and adds to invoice **[Review - High risk]**
+2. **Given** tax-exempt customer, **When** I set account tax-exempt flag, **Then** no tax is calculated on invoices **[Review - High risk]**
+3. **Given** EU customer with VAT ID, **When** invoice is generated, **Then** system validates VAT ID and applies reverse charge if valid **[Review - High risk]**
+4. **Given** tax rate change, **When** invoice is generated, **Then** current tax rate is used automatically **[Review - High risk]**
 
 ---
 
@@ -267,10 +267,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** brand settings configured, **When** invoice is generated, **Then** document includes company logo, brand colors, and custom footer
-2. **Given** invoice in EUR, **When** document is generated, **Then** formatting follows EU conventions
-3. **Given** invoice created, **When** customer views invoice, **Then** they can download document or view online version
-4. **Given** custom template, **When** I upload custom template, **Then** invoices use custom template
+1. **Given** brand settings configured, **When** invoice is generated, **Then** document includes company logo, brand colors, and custom footer **[FYI]**
+2. **Given** invoice in EUR, **When** document is generated, **Then** formatting follows EU conventions **[FYI]**
+3. **Given** invoice created, **When** customer views invoice, **Then** they can download document or view online version **[FYI]**
+4. **Given** custom template, **When** I upload custom template, **Then** invoices use custom template **[FYI]**
 
 ---
 
@@ -286,10 +286,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** flexible query endpoint, **When** I query account with nested subscriptions and invoices, **Then** I receive nested data in single request
-2. **Given** standard API, **When** I retrieve account, **Then** I receive account data with links to related resources
-3. **Given** pagination needed, **When** I query large result sets, **Then** cursor-based pagination is used
-4. **Given** API documentation, **When** I visit documentation, **Then** I see interactive API explorer and examples
+1. **Given** flexible query endpoint, **When** I query account with nested subscriptions and invoices, **Then** I receive nested data in single request **[FYI]**
+2. **Given** standard API, **When** I retrieve account, **Then** I receive account data with links to related resources **[FYI]**
+3. **Given** pagination needed, **When** I query large result sets, **Then** cursor-based pagination is used **[FYI]**
+4. **Given** API documentation, **When** I visit documentation, **Then** I see interactive API explorer and examples **[FYI]**
 
 ---
 
@@ -305,10 +305,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** active subscriptions, **When** I retrieve MRR metric, **Then** I receive current MRR, growth rate, and 12-month trend
-2. **Given** subscription changes, **When** I retrieve churn metric, **Then** I receive churn rate, voluntary vs involuntary breakdown
-3. **Given** customer base, **When** I retrieve LTV metric, **Then** I receive average LTV, LTV:CAC ratio, payback period
-4. **Given** usage data, **When** I retrieve usage trends, **Then** I receive usage patterns by plan and customer segment
+1. **Given** active subscriptions, **When** I retrieve MRR metric, **Then** I receive current MRR, growth rate, and 12-month trend **[FYI]**
+2. **Given** subscription changes, **When** I retrieve churn metric, **Then** I receive churn rate, voluntary vs involuntary breakdown **[FYI]**
+3. **Given** customer base, **When** I retrieve LTV metric, **Then** I receive average LTV, LTV:CAC ratio, payback period **[FYI]**
+4. **Given** usage data, **When** I retrieve usage trends, **Then** I receive usage patterns by plan and customer segment **[FYI]**
 
 ---
 
@@ -324,10 +324,10 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** active subscription, **When** customer requests pause, **Then** subscription enters PAUSED state and billing stops
-2. **Given** paused subscription with resume date, **When** resume date arrives, **Then** subscription auto-resumes to ACTIVE and billing continues
-3. **Given** paused subscription, **When** pause period exceeds 90 days, **Then** system auto-cancels and notifies customer
-4. **Given** usage-based subscription, **When** subscription is paused, **Then** usage tracking stops and resumes with reactivation
+1. **Given** active subscription, **When** customer requests pause, **Then** subscription enters PAUSED state and billing stops **[Review - Low risk]**
+2. **Given** paused subscription with resume date, **When** resume date arrives, **Then** subscription auto-resumes to ACTIVE and billing continues **[Review - Low risk]**
+3. **Given** paused subscription, **When** pause period exceeds 90 days, **Then** system auto-cancels and notifies customer **[Review - Low risk]**
+4. **Given** usage-based subscription, **When** subscription is paused, **Then** usage tracking stops and resumes with reactivation **[Review - Low risk]**
 
 ---
 
