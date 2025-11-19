@@ -25,13 +25,13 @@
 
 **Purpose**: Project initialization and repository structure
 
-- [ ] T001 Create project structure per plan.md: backend/, backend/src/billing/, backend/tests/, backend/alembic/ [FYI]
-- [ ] T002 Initialize Python 3.11+ project with Poetry and pyproject.toml dependencies (FastAPI, SQLAlchemy 2.0, Pydantic v2, Alembic, Stripe SDK, httpx, pytest, structlog, prometheus-client, opentelemetry-sdk) [FYI]
-- [ ] T003 [P] Configure Ruff linting and Black formatting in pyproject.toml [FYI]
-- [ ] T004 [P] Create .gitignore with Python, __pycache__, .env, venv/, .pytest_cache/ [FYI]
-- [ ] T005 [P] Create .env.example with DATABASE_URL, REDIS_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET placeholders [FYI]
-- [ ] T006 [P] Create README.md with project overview and quickstart instructions [FYI]
-- [ ] T007 [P] Create docker-compose.yml with PostgreSQL 15 and Redis 7 services [FYI]
+- [x] T001 Create project structure per plan.md: backend/, backend/src/billing/, backend/tests/, backend/alembic/ [FYI]
+- [x] T002 Initialize Python 3.11+ project with Poetry and pyproject.toml dependencies (FastAPI, SQLAlchemy 2.0, Pydantic v2, Alembic, Stripe SDK, httpx, pytest, structlog, prometheus-client, opentelemetry-sdk) [FYI]
+- [x] T003 [P] Configure Ruff linting and Black formatting in pyproject.toml [FYI]
+- [x] T004 [P] Create .gitignore with Python, __pycache__, .env, venv/, .pytest_cache/ [FYI]
+- [x] T005 [P] Create .env.example with DATABASE_URL, REDIS_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET placeholders [FYI]
+- [x] T006 [P] Create README.md with project overview and quickstart instructions [FYI]
+- [x] T007 [P] Create docker-compose.yml with PostgreSQL 15 and Redis 7 services [FYI]
 
 **Checkpoint**: Project structure initialized, dependencies installed
 
@@ -45,29 +45,29 @@
 
 ### Database & Configuration
 
-- [ ] T008 Implement backend/src/billing/config.py using pydantic-settings for DATABASE_URL, REDIS_URL, STRIPE_SECRET_KEY, LOG_LEVEL [Review - Low risk]
-- [ ] T009 Implement backend/src/billing/database.py with SQLAlchemy async engine, sessionmaker, and get_db() dependency [Review - Low risk]
-- [ ] T010 Setup Alembic in backend/alembic/ with env.py configured for async SQLAlchemy [Review - Low risk]
-- [ ] T011 Create backend/src/billing/models/base.py with declarative Base class [Review - Low risk]
+- [x] T008 Implement backend/src/billing/config.py using pydantic-settings for DATABASE_URL, REDIS_URL, STRIPE_SECRET_KEY, LOG_LEVEL [Review - Low risk]
+- [x] T009 Implement backend/src/billing/database.py with SQLAlchemy async engine, sessionmaker, and get_db() dependency [Review - Low risk]
+- [x] T010 Setup Alembic in backend/alembic/ with env.py configured for async SQLAlchemy [Review - Low risk]
+- [x] T011 Create backend/src/billing/models/base.py with declarative Base class [Review - Low risk]
 
 ### Core Application
 
-- [ ] T012 Implement backend/src/billing/main.py with FastAPI app, CORS middleware, exception handlers [Review - Low risk]
-- [ ] T013 [P] Implement backend/src/billing/api/deps.py with get_db(), get_current_user() (JWT auth skeleton) [Review - Low risk]
-- [ ] T014 [P] Implement backend/src/billing/middleware/logging.py with structlog request/response logging, request_id context [Review - Low risk]
-- [ ] T015 [P] Implement backend/src/billing/middleware/metrics.py with Prometheus metrics (api_request_duration_seconds histogram, api_errors_total counter) [Review - Low risk]
+- [x] T012 Implement backend/src/billing/main.py with FastAPI app, CORS middleware, exception handlers [Review - Low risk]
+- [x] T013 [P] Implement backend/src/billing/api/deps.py with get_db(), get_current_user() (JWT auth skeleton) [Review - Low risk]
+- [x] T014 [P] Implement backend/src/billing/middleware/logging.py with structlog request/response logging, request_id context [Review - Low risk]
+- [x] T015 [P] Implement backend/src/billing/middleware/metrics.py with Prometheus metrics (api_request_duration_seconds histogram, api_errors_total counter) [Review - Low risk]
 
 ### Observability (FR-145 to FR-156)
 
-- [ ] T016 [P] Implement backend/src/billing/api/v1/health.py with GET /health (liveness), GET /health/ready (readiness checking DB/Redis) [Review - Low risk]
-- [ ] T017 [P] Implement backend/src/billing/metrics.py with Prometheus metrics: invoices_generated_total, payments_attempted_total{status}, mrr_dollars gauge [Review - Low risk]
-- [ ] T018 [P] Setup OpenTelemetry tracing in backend/src/billing/tracing.py with FastAPI and SQLAlchemy instrumentation [Review - Low risk]
+- [x] T016 [P] Implement backend/src/billing/api/v1/health.py with GET /health (liveness), GET /health/ready (readiness checking DB/Redis) [Review - Low risk]
+- [x] T017 [P] Implement backend/src/billing/metrics.py with Prometheus metrics: invoices_generated_total, payments_attempted_total{status}, mrr_dollars gauge [Review - Low risk]
+- [x] T018 [P] Setup OpenTelemetry tracing in backend/src/billing/tracing.py with FastAPI and SQLAlchemy instrumentation [Review - Low risk]
 
 ### Testing Infrastructure
 
-- [ ] T019 Create backend/tests/conftest.py with async test database fixtures (pytest-asyncio, test DB session) [FYI]
-- [ ] T020 [P] Implement backend/tests/utils/factories.py with Faker-based test data generators [FYI]
-- [ ] T021 [P] Create backend/tests/integration/test_health.py to verify health endpoints work [FYI]
+- [x] T019 Create backend/tests/conftest.py with async test database fixtures (pytest-asyncio, test DB session) [FYI]
+- [x] T020 [P] Implement backend/tests/utils/factories.py with Faker-based test data generators [FYI]
+- [x] T021 [P] Create backend/tests/integration/test_health.py to verify health endpoints work [FYI]
 
 **Checkpoint**: Foundation complete - user stories can now be implemented in parallel
 
@@ -83,21 +83,21 @@
 
 > **Write these FIRST, ensure they FAIL, then implement**
 
-- [ ] T022 [P] [US1] Integration test for account creation in backend/tests/integration/test_accounts.py (test_create_account_minimal, test_create_account_with_payment_method, test_duplicate_email_creates_separate_accounts) [FYI]
-- [ ] T023 [P] [US1] Integration test for account retrieval in backend/tests/integration/test_accounts.py (test_get_account_with_masked_payment_method) [FYI]
+- [x] T022 [P] [US1] Integration test for account creation in backend/tests/integration/test_accounts.py (test_create_account_minimal, test_create_account_with_payment_method, test_duplicate_email_creates_separate_accounts) [FYI]
+- [x] T023 [P] [US1] Integration test for account retrieval in backend/tests/integration/test_accounts.py (test_get_account_with_masked_payment_method) [FYI]
 
 ### Implementation for US1
 
-- [ ] T024 [P] [US1] Create Account model in backend/src/billing/models/account.py (UUID id, email, name, currency, timezone, tax_exempt, metadata JSONB, created_at, updated_at) [FYI]
-- [ ] T025 [P] [US1] Create PaymentMethod model in backend/src/billing/models/payment_method.py (account_id FK, gateway_payment_method_id, type, card_last4, card_brand, is_default) [FYI]
-- [ ] T026 [P] [US1] Create Pydantic schemas in backend/src/billing/schemas/account.py (AccountCreate, AccountResponse, AccountUpdate) [FYI]
-- [ ] T027 [P] [US1] Create Pydantic schemas in backend/src/billing/schemas/payment_method.py (PaymentMethodCreate, PaymentMethodResponse) [FYI]
-- [ ] T028 [US1] Create Alembic migration for accounts and payment_methods tables (indexes on email, created_at) [Review - Low risk]
-- [ ] T029 [US1] Implement AccountService in backend/src/billing/services/account_service.py (create_account with timezone detection, add_payment_method with Stripe token verification) [Review - Low risk]
-- [ ] T030 [US1] Implement Stripe adapter in backend/src/billing/integrations/stripe.py (create_customer, attach_payment_method, verify_payment_method) [Review - High risk]
-- [ ] T031 [US1] Implement POST /v1/accounts endpoint in backend/src/billing/api/v1/accounts.py [Review - Low risk]
-- [ ] T032 [US1] Implement GET /v1/accounts/{account_id} endpoint in backend/src/billing/api/v1/accounts.py (mask payment method details) [FYI]
-- [ ] T033 [US1] Implement POST /v1/accounts/{account_id}/payment-methods endpoint in backend/src/billing/api/v1/accounts.py [Review - High risk]
+- [x] T024 [P] [US1] Create Account model in backend/src/billing/models/account.py (UUID id, email, name, currency, timezone, tax_exempt, metadata JSONB, created_at, updated_at) [FYI]
+- [x] T025 [P] [US1] Create PaymentMethod model in backend/src/billing/models/payment_method.py (account_id FK, gateway_payment_method_id, type, card_last4, card_brand, is_default) [FYI]
+- [x] T026 [P] [US1] Create Pydantic schemas in backend/src/billing/schemas/account.py (AccountCreate, AccountResponse, AccountUpdate) [FYI]
+- [x] T027 [P] [US1] Create Pydantic schemas in backend/src/billing/schemas/payment_method.py (PaymentMethodCreate, PaymentMethodResponse) [FYI]
+- [x] T028 [US1] Create Alembic migration for accounts and payment_methods tables (indexes on email, created_at) [Review - Low risk]
+- [x] T029 [US1] Implement AccountService in backend/src/billing/services/account_service.py (create_account with timezone detection, add_payment_method with Stripe token verification) [Review - Low risk]
+- [x] T030 [US1] Implement Stripe adapter in backend/src/billing/integrations/stripe.py (create_customer, attach_payment_method, verify_payment_method) [Review - High risk]
+- [x] T031 [US1] Implement POST /v1/accounts endpoint in backend/src/billing/api/v1/accounts.py [Review - Low risk]
+- [x] T032 [US1] Implement GET /v1/accounts/{account_id} endpoint in backend/src/billing/api/v1/accounts.py (mask payment method details) [FYI]
+- [x] T033 [US1] Implement POST /v1/accounts/{account_id}/payment-methods endpoint in backend/src/billing/api/v1/accounts.py [Review - High risk]
 
 **Checkpoint**: US1 complete - accounts can be created, payment methods attached, accounts retrieved
 
@@ -111,17 +111,17 @@
 
 ### Tests for US2
 
-- [ ] T034 [P] [US2] Integration test for plan creation in backend/tests/integration/test_plans.py (test_create_monthly_annual_plan, test_create_plan_with_trial, test_create_usage_based_plan_with_tiers, test_plan_versioning) [FYI]
+- [x] T034 [P] [US2] Integration test for plan creation in backend/tests/integration/test_plans.py (test_create_monthly_annual_plan, test_create_plan_with_trial, test_create_usage_based_plan_with_tiers, test_plan_versioning) [FYI]
 
 ### Implementation for US2
 
-- [ ] T035 [P] [US2] Create Plan model in backend/src/billing/models/plan.py (UUID id, name, interval, amount, currency, trial_days, usage_type, tiers JSONB, active, version, created_at) [FYI]
-- [ ] T036 [P] [US2] Create Pydantic schemas in backend/src/billing/schemas/plan.py (PlanCreate, PlanResponse, PlanUpdate, UsageTier) [FYI]
-- [ ] T037 [US2] Create Alembic migration for plans table (index on active) [Review - Low risk]
-- [ ] T038 [US2] Implement PlanService in backend/src/billing/services/plan_service.py (create_plan with automatic versioning, calculate_usage_charge for tiered pricing) [Review - High risk]
-- [ ] T039 [US2] Implement POST /v1/plans endpoint in backend/src/billing/api/v1/plans.py [Review - Low risk]
-- [ ] T040 [US2] Implement GET /v1/plans endpoint with filtering by active in backend/src/billing/api/v1/plans.py [FYI]
-- [ ] T041 [US2] Implement GET /v1/plans/{plan_id} endpoint in backend/src/billing/api/v1/plans.py [FYI]
+- [x] T035 [P] [US2] Create Plan model in backend/src/billing/models/plan.py (UUID id, name, interval, amount, currency, trial_days, usage_type, tiers JSONB, active, version, created_at) [FYI]
+- [x] T036 [P] [US2] Create Pydantic schemas in backend/src/billing/schemas/plan.py (PlanCreate, PlanResponse, PlanUpdate, UsageTier) [FYI]
+- [x] T037 [US2] Create Alembic migration for plans table (index on active) [Review - Low risk]
+- [x] T038 [US2] Implement PlanService in backend/src/billing/services/plan_service.py (create_plan with automatic versioning, calculate_usage_charge for tiered pricing) [Review - High risk]
+- [x] T039 [US2] Implement POST /v1/plans endpoint in backend/src/billing/api/v1/plans.py [Review - Low risk]
+- [x] T040 [US2] Implement GET /v1/plans endpoint with filtering by active in backend/src/billing/api/v1/plans.py [FYI]
+- [x] T041 [US2] Implement GET /v1/plans/{plan_id} endpoint in backend/src/billing/api/v1/plans.py [FYI]
 
 **Checkpoint**: US2 complete - pricing plans can be created and queried
 
@@ -135,20 +135,20 @@
 
 ### Tests for US3
 
-- [ ] T042 [P] [US3] Integration test for subscription creation in backend/tests/integration/test_subscriptions.py (test_create_subscription_with_payment, test_create_subscription_with_trial, test_auto_invoice_on_billing_date, test_cancel_subscription) [FYI]
-- [ ] T043 [P] [US3] Integration test for subscription state transitions in backend/tests/integration/test_subscriptions.py (test_trial_to_active_transition, test_cancelled_prevents_next_billing) [FYI]
+- [x] T042 [P] [US3] Integration test for subscription creation in backend/tests/integration/test_subscriptions.py (test_create_subscription_with_payment, test_create_subscription_with_trial, test_auto_invoice_on_billing_date, test_cancel_subscription) [FYI]
+- [x] T043 [P] [US3] Integration test for subscription state transitions in backend/tests/integration/test_subscriptions.py (test_trial_to_active_transition, test_cancelled_prevents_next_billing) [FYI]
 
 ### Implementation for US3
 
-- [ ] T044 [P] [US3] Create Subscription model in backend/src/billing/models/subscription.py (UUID id, account_id FK, plan_id FK, status enum, quantity, current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at) [FYI]
-- [ ] T045 [P] [US3] Create SubscriptionHistory model in backend/src/billing/models/subscription.py (for audit trail of status/plan changes) [FYI]
-- [ ] T046 [P] [US3] Create Pydantic schemas in backend/src/billing/schemas/subscription.py (SubscriptionCreate, SubscriptionResponse, SubscriptionUpdate, SubscriptionStatus enum) [FYI]
-- [ ] T047 [US3] Create Alembic migration for subscriptions and subscription_history tables (indexes on account_id, status, current_period_end) [Review - Low risk]
-- [ ] T048 [US3] Implement SubscriptionService in backend/src/billing/services/subscription_service.py (create_subscription, handle_trial_logic, cancel_subscription, check_and_transition_trial_to_active) [Review - High risk]
-- [ ] T049 [US3] Implement POST /v1/subscriptions endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
-- [ ] T050 [US3] Implement GET /v1/subscriptions/{subscription_id} endpoint in backend/src/billing/api/v1/subscriptions.py [FYI]
-- [ ] T051 [US3] Implement DELETE /v1/subscriptions/{subscription_id} (cancel) endpoint in backend/src/billing/api/v1/subscriptions.py [FYI]
-- [ ] T052 [US3] Implement background worker for billing cycle job in backend/src/billing/workers/billing_cycle.py (ARQ worker to auto-generate invoices on current_period_end) [Review - High risk]
+- [x] T044 [P] [US3] Create Subscription model in backend/src/billing/models/subscription.py (UUID id, account_id FK, plan_id FK, status enum, quantity, current_period_start, current_period_end, cancel_at_period_end, created_at, updated_at) [FYI]
+- [x] T045 [P] [US3] Create SubscriptionHistory model in backend/src/billing/models/subscription.py (for audit trail of status/plan changes) [FYI]
+- [x] T046 [P] [US3] Create Pydantic schemas in backend/src/billing/schemas/subscription.py (SubscriptionCreate, SubscriptionResponse, SubscriptionUpdate, SubscriptionStatus enum) [FYI]
+- [x] T047 [US3] Create Alembic migration for subscriptions and subscription_history tables (indexes on account_id, status, current_period_end) [Review - Low risk]
+- [x] T048 [US3] Implement SubscriptionService in backend/src/billing/services/subscription_service.py (create_subscription, handle_trial_logic, cancel_subscription, check_and_transition_trial_to_active) [Review - High risk]
+- [x] T049 [US3] Implement POST /v1/subscriptions endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
+- [x] T050 [US3] Implement GET /v1/subscriptions/{subscription_id} endpoint in backend/src/billing/api/v1/subscriptions.py [FYI]
+- [x] T051 [US3] Implement DELETE /v1/subscriptions/{subscription_id} (cancel) endpoint in backend/src/billing/api/v1/subscriptions.py [FYI]
+- [x] T052 [US3] Implement background worker for billing cycle job in backend/src/billing/workers/billing_cycle.py (ARQ worker to auto-generate invoices on current_period_end) [Review - High risk]
 
 **Checkpoint**: US3 complete - subscriptions can be created, trials work, auto-billing scheduled
 
