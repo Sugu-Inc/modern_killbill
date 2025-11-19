@@ -110,12 +110,15 @@ class AccountService:
 
         return account
 
-    async def delete_account(self, account_id: UUID) -> None:
+    async def delete_account(self, account_id: UUID) -> Account:
         """
         Soft delete account.
 
         Args:
             account_id: Account UUID
+
+        Returns:
+            Account: The soft-deleted account
 
         Raises:
             ValueError: If account not found
@@ -131,6 +134,7 @@ class AccountService:
         account.status = AccountStatus.BLOCKED
 
         await self.db.flush()
+        return account
 
     async def list_accounts(
         self,

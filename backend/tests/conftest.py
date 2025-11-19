@@ -66,27 +66,78 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         await conn.run_sync(Base.metadata.drop_all)
 
 
+async def _setup_test_db() -> None:
+    """Create database tables for testing."""
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def _teardown_test_db() -> None:
+    """Drop database tables after testing."""
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+
 @pytest.fixture(scope="function")
-def client() -> TestClient:
+def client() -> Generator[TestClient, None, None]:
     """
-    Create a FastAPI test client.
+    Create a FastAPI test client with test database.
 
     Returns:
-        TestClient: Synchronous test client for FastAPI
+        TestClient: Synchronous test client for FastAPI with test database
     """
-    return TestClient(app)
+    from billing.api.deps import get_db
+
+    # Setup database tables
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(_setup_test_db())
+
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        """Override database dependency to use test database."""
+        async with TestAsyncSessionLocal() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    with TestClient(app) as test_client:
+        yield test_client
+
+    # Clean up
+    app.dependency_overrides.clear()
+    loop.run_until_complete(_teardown_test_db())
 
 
 @pytest_asyncio.fixture(scope="function")
-async def async_client() -> AsyncGenerator[AsyncClient, None]:
+async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """
-    Create an async HTTP client for testing.
+    Create an async HTTP client for testing with database dependency override.
+
+    Args:
+        db_session: Test database session fixture
 
     Yields:
         AsyncClient: Async HTTP client for API testing
     """
+    from billing.api.deps import get_db
+
+    async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
+        """Override database dependency to use test database."""
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
+
+    # Clean up
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="function")

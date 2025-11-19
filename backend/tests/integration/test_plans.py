@@ -1,7 +1,7 @@
 """Integration tests for pricing plan endpoints."""
 import pytest
 from uuid import UUID
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from billing.models.plan import Plan, PlanInterval, UsageType
@@ -239,9 +239,10 @@ async def test_deactivate_plan(db_session: AsyncSession) -> None:
 # API endpoint tests
 
 
-def test_create_plan_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_create_plan_via_api(async_client: AsyncClient) -> None:
     """Test creating plan via REST API."""
-    response = client.post(
+    response = await async_client.post(
         "/v1/plans",
         json={
             "name": "API Plan",
@@ -260,10 +261,11 @@ def test_create_plan_via_api(client: TestClient) -> None:
     assert "id" in data
 
 
-def test_get_plan_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_get_plan_via_api(async_client: AsyncClient) -> None:
     """Test retrieving plan via REST API."""
     # Create plan
-    create_response = client.post(
+    create_response = await async_client.post(
         "/v1/plans",
         json={
             "name": "Get API Plan",
@@ -275,7 +277,7 @@ def test_get_plan_via_api(client: TestClient) -> None:
     plan_id = create_response.json()["id"]
 
     # Get plan
-    response = client.get(f"/v1/plans/{plan_id}")
+    response = await async_client.get(f"/v1/plans/{plan_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -283,11 +285,12 @@ def test_get_plan_via_api(client: TestClient) -> None:
     assert data["name"] == "Get API Plan"
 
 
-def test_list_plans_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_list_plans_via_api(async_client: AsyncClient) -> None:
     """Test listing plans via REST API."""
     # Create a few plans
     for i in range(3):
-        client.post(
+        await async_client.post(
             "/v1/plans",
             json={
                 "name": f"List API Plan {i}",
@@ -298,7 +301,7 @@ def test_list_plans_via_api(client: TestClient) -> None:
         )
 
     # List plans
-    response = client.get("/v1/plans?page=1&page_size=10")
+    response = await async_client.get("/v1/plans?page=1&page_size=10")
 
     assert response.status_code == 200
     data = response.json()
@@ -307,10 +310,11 @@ def test_list_plans_via_api(client: TestClient) -> None:
     assert len(data["items"]) >= 3
 
 
-def test_list_active_plans_filter_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_list_active_plans_filter_via_api(async_client: AsyncClient) -> None:
     """Test filtering active plans via REST API."""
     # Create plan
-    create_response = client.post(
+    create_response = await async_client.post(
         "/v1/plans",
         json={
             "name": "Filter Plan",
@@ -322,10 +326,10 @@ def test_list_active_plans_filter_via_api(client: TestClient) -> None:
     plan_id = create_response.json()["id"]
 
     # Deactivate it
-    client.delete(f"/v1/plans/{plan_id}")
+    await async_client.delete(f"/v1/plans/{plan_id}")
 
     # List active plans only
-    response = client.get("/v1/plans?active=true")
+    response = await async_client.get("/v1/plans?active=true")
 
     assert response.status_code == 200
     data = response.json()

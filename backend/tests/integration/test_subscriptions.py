@@ -2,7 +2,7 @@
 import pytest
 from datetime import datetime, timedelta
 from uuid import UUID
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from billing.models.subscription import Subscription, SubscriptionStatus
@@ -275,7 +275,7 @@ async def test_change_plan_immediate(db_session: AsyncSession) -> None:
     # Change plan immediately
     plan_change = SubscriptionPlanChange(
         new_plan_id=new_plan.id,
-        change_at_period_end=False,
+        immediate=True,
     )
     changed = await subscription_service.change_plan(subscription.id, plan_change)
     await db_session.commit()
@@ -328,17 +328,18 @@ async def test_change_plan_at_period_end(db_session: AsyncSession) -> None:
 # API endpoint tests
 
 
-def test_create_subscription_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_create_subscription_via_api(async_client: AsyncClient) -> None:
     """Test creating subscription via REST API."""
     # Create account first
-    account_response = client.post(
+    account_response = await async_client.post(
         "/v1/accounts",
         json={"email": "subapi@example.com", "name": "Sub API Account"},
     )
     account_id = account_response.json()["id"]
 
     # Create plan
-    plan_response = client.post(
+    plan_response = await async_client.post(
         "/v1/plans",
         json={
             "name": "API Sub Plan",
@@ -350,7 +351,7 @@ def test_create_subscription_via_api(client: TestClient) -> None:
     plan_id = plan_response.json()["id"]
 
     # Create subscription
-    response = client.post(
+    response = await async_client.post(
         "/v1/subscriptions",
         json={"account_id": account_id, "plan_id": plan_id, "quantity": 1},
     )
@@ -362,60 +363,61 @@ def test_create_subscription_via_api(client: TestClient) -> None:
     assert "id" in data
 
 
-def test_get_subscription_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_get_subscription_via_api(async_client: AsyncClient) -> None:
     """Test retrieving subscription via REST API."""
     # Setup
-    account_response = client.post(
+    account_response = await async_client.post(
         "/v1/accounts",
         json={"email": "getsubapi@example.com", "name": "Get Sub API"},
     )
     account_id = account_response.json()["id"]
 
-    plan_response = client.post(
+    plan_response = await async_client.post(
         "/v1/plans",
         json={"name": "Get Sub Plan", "interval": "month", "amount": 1000, "currency": "USD"},
     )
     plan_id = plan_response.json()["id"]
 
-    sub_response = client.post(
+    sub_response = await async_client.post(
         "/v1/subscriptions",
         json={"account_id": account_id, "plan_id": plan_id, "quantity": 1},
     )
     subscription_id = sub_response.json()["id"]
 
     # Get subscription
-    response = client.get(f"/v1/subscriptions/{subscription_id}")
+    response = await async_client.get(f"/v1/subscriptions/{subscription_id}")
 
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == subscription_id
 
 
-def test_cancel_subscription_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_cancel_subscription_via_api(async_client: AsyncClient) -> None:
     """Test canceling subscription via REST API."""
     # Setup
-    account_response = client.post(
+    account_response = await async_client.post(
         "/v1/accounts",
         json={"email": "cancelapi@example.com", "name": "Cancel API"},
     )
     account_id = account_response.json()["id"]
 
-    plan_response = client.post(
+    plan_response = await async_client.post(
         "/v1/plans",
         json={"name": "Cancel API Plan", "interval": "month", "amount": 1000, "currency": "USD"},
     )
     plan_id = plan_response.json()["id"]
 
-    sub_response = client.post(
+    sub_response = await async_client.post(
         "/v1/subscriptions",
         json={"account_id": account_id, "plan_id": plan_id, "quantity": 1},
     )
     subscription_id = sub_response.json()["id"]
 
     # Cancel subscription
-    response = client.post(
-        f"/v1/subscriptions/{subscription_id}/cancel",
-        json={"immediate": True},
+    response = await async_client.post(
+        f"/v1/subscriptions/{subscription_id}/cancel?immediate=true",
     )
 
     assert response.status_code == 200

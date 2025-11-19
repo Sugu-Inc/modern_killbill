@@ -1,7 +1,7 @@
 """Integration tests for account management endpoints."""
 import pytest
 from uuid import UUID
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from billing.models.account import Account, AccountStatus
@@ -191,12 +191,13 @@ async def test_soft_delete_account(db_session: AsyncSession) -> None:
     assert account.id not in account_ids
 
 
-# API endpoint tests using TestClient
+# API endpoint tests using AsyncClient
 
 
-def test_create_account_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_create_account_via_api(async_client: AsyncClient) -> None:
     """Test creating account via REST API."""
-    response = client.post(
+    response = await async_client.post(
         "/v1/accounts",
         json={
             "email": "api@example.com",
@@ -212,17 +213,18 @@ def test_create_account_via_api(client: TestClient) -> None:
     assert "id" in data
 
 
-def test_get_account_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_get_account_via_api(async_client: AsyncClient) -> None:
     """Test retrieving account via REST API."""
     # Create account
-    create_response = client.post(
+    create_response = await async_client.post(
         "/v1/accounts",
         json={"email": "getapi@example.com", "name": "Get API Account"},
     )
     account_id = create_response.json()["id"]
 
     # Get account
-    response = client.get(f"/v1/accounts/{account_id}")
+    response = await async_client.get(f"/v1/accounts/{account_id}")
 
     assert response.status_code == 200
     data = response.json()
@@ -230,17 +232,18 @@ def test_get_account_via_api(client: TestClient) -> None:
     assert data["email"] == "getapi@example.com"
 
 
-def test_list_accounts_via_api(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_list_accounts_via_api(async_client: AsyncClient) -> None:
     """Test listing accounts via REST API with pagination."""
     # Create a few accounts
     for i in range(3):
-        client.post(
+        await async_client.post(
             "/v1/accounts",
             json={"email": f"listapi{i}@example.com", "name": f"List API {i}"},
         )
 
     # List accounts
-    response = client.get("/v1/accounts?page=1&page_size=10")
+    response = await async_client.get("/v1/accounts?page=1&page_size=10")
 
     assert response.status_code == 200
     data = response.json()
