@@ -47,6 +47,11 @@ class SubscriptionService:
         if not account:
             raise ValueError(f"Account {subscription_data.account_id} not found")
 
+        # Check account status - blocked accounts cannot create subscriptions
+        from billing.models.account import AccountStatus
+        if account.status == AccountStatus.BLOCKED:
+            raise ValueError(f"Cannot create subscription: account {subscription_data.account_id} is blocked due to overdue payments")
+
         # Verify plan exists and is active
         plan_result = await self.db.execute(
             select(Plan).where(Plan.id == subscription_data.plan_id)

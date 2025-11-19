@@ -266,15 +266,15 @@
 
 ### Tests for US8
 
-- [ ] T093 [P] [US8] Integration test for dunning process in backend/tests/integration/test_dunning.py (test_3_day_reminder_sent, test_7_day_warning_with_account_warning_status, test_14_day_service_blocking, test_payment_unblocks_account) [FYI]
+- [x] T093 [P] [US8] Integration test for dunning process in backend/tests/integration/test_dunning.py (test_3_day_reminder_sent, test_7_day_warning_with_account_warning_status, test_14_day_service_blocking, test_payment_unblocks_account) [FYI]
 
 ### Implementation for US8
 
-- [ ] T094 [US8] Implement DunningService in backend/src/billing/services/dunning_service.py (check_overdue_invoices, send_reminder [day 3], send_warning [day 7], block_account [day 14], unblock_on_payment) [Review - Low risk]
-- [ ] T095 [US8] Add account status field to Account model in backend/src/billing/models/account.py (status enum: ACTIVE, WARNING, BLOCKED) [Review - Low risk]
-- [ ] T096 [US8] Create Alembic migration to add status column to accounts table [Review - Low risk]
+- [x] T094 [US8] Implement DunningService in backend/src/billing/services/dunning_service.py (check_overdue_invoices, send_reminder [day 3], send_warning [day 7], block_account [day 14], unblock_on_payment) [Review - Low risk]
+- [x] T095 [US8] Add account status field to Account model in backend/src/billing/models/account.py (status enum: ACTIVE, WARNING, BLOCKED) [Review - Low risk]
+- [x] T096 [US8] Create Alembic migration to add status column to accounts table [Review - Low risk]
 - [ ] T097 [US8] Implement background worker for dunning process in backend/src/billing/workers/dunning.py (ARQ scheduled daily job) [Review - Low risk]
-- [ ] T098 [US8] Implement notification service integration in backend/src/billing/integrations/notification_service.py (send email/SMS via external service) [Review - Low risk]
+- [x] T098 [US8] Implement notification service integration in backend/src/billing/integrations/notification_service.py (send email/SMS via external service) [Review - Low risk]
 
 **Checkpoint**: US8 complete - dunning process runs automatically, service blocking works
 
