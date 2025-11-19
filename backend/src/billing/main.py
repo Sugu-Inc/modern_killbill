@@ -151,13 +151,14 @@ async def root() -> dict[str, str]:
 
 
 # Include routers
-from billing.api.v1 import health, accounts, plans
+from billing.api.v1 import health, accounts, plans, subscriptions
 
 app.include_router(health.router, tags=["Health"])
 app.include_router(accounts.router, prefix="/v1", tags=["Accounts"])
 app.include_router(plans.router, prefix="/v1", tags=["Plans"])
+app.include_router(subscriptions.router, prefix="/v1", tags=["Subscriptions"])
 
 # Additional routers will be added in subsequent phases
-# from billing.api.v1 import subscriptions, invoices, payments, usage, credits, analytics
-# app.include_router(subscriptions.router, prefix="/v1", tags=["Subscriptions"])
+# from billing.api.v1 import invoices, payments, usage, credits, analytics
+# app.include_router(invoices.router, prefix="/v1", tags=["Invoices"])
 # ... other routers
