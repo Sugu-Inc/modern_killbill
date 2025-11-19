@@ -12,6 +12,7 @@
 ### Session 2025-11-19
 
 - Q: What is the target system availability/uptime SLA? → A: 99.9% uptime (43 minutes downtime/month)
+- Q: What is the data retention policy for different data types? → A: Invoices/Payments: 7 years, Audit logs: 3 years, Deleted accounts: 30 days
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -552,6 +553,12 @@
 - **FR-138**: System MUST support role-based access control for admin users
 - **FR-139**: System MUST hash API keys securely
 - **FR-140**: System MUST support IP whitelisting for API access (optional)
+
+#### Data Retention (FR-141 to FR-143)
+
+- **FR-141**: System MUST retain invoices and payment records for 7 years for financial compliance
+- **FR-142**: System MUST retain audit logs for 3 years for security and compliance purposes
+- **FR-143**: System MUST soft-delete account data with 30-day retention before permanent deletion
 
 ### Key Entities
 
