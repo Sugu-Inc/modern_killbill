@@ -342,7 +342,7 @@ class SubscriptionService:
         self, subscription_id: UUID, plan_change: SubscriptionPlanChange
     ) -> Subscription:
         """
-        Change subscription plan.
+        Change subscription plan with optional proration and quantity changes.
 
         Args:
             subscription_id: Subscription UUID
@@ -354,7 +354,13 @@ class SubscriptionService:
         Raises:
             ValueError: If subscription/plan not found or plan inactive
         """
-        subscription = await self.get_subscription(subscription_id)
+        # Load subscription with relationships
+        result = await self.db.execute(
+            select(Subscription)
+            .options(selectinload(Subscription.plan), selectinload(Subscription.account))
+            .where(Subscription.id == subscription_id)
+        )
+        subscription = result.scalar_one_or_none()
         if not subscription:
             raise ValueError(f"Subscription {subscription_id} not found")
 
@@ -368,11 +374,31 @@ class SubscriptionService:
         if not new_plan.active:
             raise ValueError(f"Plan {plan_change.new_plan_id} is inactive")
 
-        if plan_change.immediate:
-            # Immediate plan change
+        old_plan = subscription.plan
+        old_quantity = subscription.quantity
+        new_quantity = plan_change.new_quantity if plan_change.new_quantity is not None else subscription.quantity
+
+        # Determine if change should be immediate or scheduled
+        is_immediate = plan_change.immediate or not plan_change.change_at_period_end
+
+        if is_immediate:
+            # Immediate plan change with proration
             old_plan_id = subscription.plan_id
             subscription.plan_id = plan_change.new_plan_id
             subscription.pending_plan_id = None
+            subscription.quantity = new_quantity
+
+            # Generate prorated invoice if plan or quantity changed
+            if old_plan_id != plan_change.new_plan_id or old_quantity != new_quantity:
+                from billing.services.invoice_service import InvoiceService
+                invoice_service = InvoiceService(self.db)
+
+                await invoice_service.create_proration_invoice(
+                    subscription=subscription,
+                    old_plan=old_plan,
+                    new_plan=new_plan,
+                    change_date=datetime.utcnow(),
+                )
 
             await self._create_history(
                 subscription_id,
@@ -380,6 +406,14 @@ class SubscriptionService:
                 str(old_plan_id),
                 str(plan_change.new_plan_id),
             )
+
+            if old_quantity != new_quantity:
+                await self._create_history(
+                    subscription_id,
+                    "quantity_changed",
+                    str(old_quantity),
+                    str(new_quantity),
+                )
         else:
             # Schedule plan change for next period
             subscription.pending_plan_id = plan_change.new_plan_id

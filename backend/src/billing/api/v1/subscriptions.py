@@ -100,12 +100,19 @@ async def list_subscriptions(
 @router.patch("/{subscription_id}", response_model=Subscription)
 async def update_subscription(
     subscription_id: UUID,
-    update_data: SubscriptionUpdate,
+    update_data: SubscriptionUpdate | SubscriptionPlanChange,
     db: AsyncSession = Depends(get_db),
 ) -> Subscription:
     """
-    Update subscription.
+    Update subscription or change plan.
 
+    For plan changes:
+    - **new_plan_id**: New plan to switch to
+    - **new_quantity**: New quantity (optional)
+    - **immediate**: Apply change immediately (default: false)
+    - **change_at_period_end**: Schedule for period end (default: false)
+
+    For updates:
     - **quantity**: Update number of seats/licenses
     - **cancel_at_period_end**: Schedule cancellation at period end
 
@@ -114,7 +121,14 @@ async def update_subscription(
     service = SubscriptionService(db)
 
     try:
-        subscription = await service.update_subscription(subscription_id, update_data)
+        # Check if this is a plan change request
+        if isinstance(update_data, SubscriptionPlanChange) or hasattr(update_data, "new_plan_id"):
+            # Handle plan change
+            subscription = await service.change_plan(subscription_id, update_data)
+        else:
+            # Handle regular update
+            subscription = await service.update_subscription(subscription_id, update_data)
+
         await db.commit()
         return subscription
     except ValueError as e:

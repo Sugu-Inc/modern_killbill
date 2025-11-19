@@ -218,14 +218,14 @@
 
 ### Tests for US6
 
-- [ ] T077 [P] [US6] Integration test for plan changes in backend/tests/integration/test_plan_changes.py (test_mid_cycle_upgrade_generates_prorated_invoice, test_annual_to_monthly_downgrade_applies_credit, test_end_of_period_downgrade_scheduling) [FYI]
-- [ ] T078 [P] [US6] Integration test for proration edge cases in backend/tests/integration/test_plan_changes.py (test_proration_on_day_1, test_proration_on_last_day, test_proration_with_quantity_changes) [FYI]
+- [x] T077 [P] [US6] Integration test for plan changes in backend/tests/integration/test_plan_changes.py (test_mid_cycle_upgrade_generates_prorated_invoice, test_annual_to_monthly_downgrade_applies_credit, test_end_of_period_downgrade_scheduling) [FYI]
+- [x] T078 [P] [US6] Integration test for proration edge cases in backend/tests/integration/test_plan_changes.py (test_proration_on_day_1, test_proration_on_last_day, test_proration_with_quantity_changes) [FYI]
 
 ### Implementation for US6
 
-- [ ] T079 [US6] Implement change_plan method in backend/src/billing/services/subscription_service.py (immediate upgrade with proration, end-of-period downgrade scheduling, quantity changes) [Review - High risk]
-- [ ] T080 [US6] Enhance proration logic in backend/src/billing/services/invoice_service.py (handle upgrades, downgrades, annual-to-monthly conversions, per-seat quantity changes) [Review - High risk]
-- [ ] T081 [US6] Implement PATCH /v1/subscriptions/{subscription_id} endpoint in backend/src/billing/api/v1/subscriptions.py (change plan, change quantity, schedule_change_at_period_end flag) [Review - Low risk]
+- [x] T079 [US6] Implement change_plan method in backend/src/billing/services/subscription_service.py (immediate upgrade with proration, end-of-period downgrade scheduling, quantity changes) [Review - High risk]
+- [x] T080 [US6] Enhance proration logic in backend/src/billing/services/invoice_service.py (handle upgrades, downgrades, annual-to-monthly conversions, per-seat quantity changes) [Review - High risk]
+- [x] T081 [US6] Implement PATCH /v1/subscriptions/{subscription_id} endpoint in backend/src/billing/api/v1/subscriptions.py (change plan, change quantity, schedule_change_at_period_end flag) [Review - Low risk]
 - [ ] T082 [US6] Implement background job to process scheduled plan changes in backend/src/billing/workers/billing_cycle.py (check for pending changes at period end) [Review - High risk]
 
 **Checkpoint**: US6 complete - plan changes work with proration, scheduling supported

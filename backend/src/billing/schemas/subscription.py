@@ -32,7 +32,9 @@ class SubscriptionPlanChange(BaseModel):
     """Schema for scheduling a plan change."""
 
     new_plan_id: UUID = Field(..., description="New plan to switch to")
+    new_quantity: int | None = Field(default=None, description="New quantity (optional, for per-seat plans)", gt=0)
     immediate: bool = Field(default=False, description="Apply change immediately or at period end")
+    change_at_period_end: bool = Field(default=False, description="Schedule change for end of current period (alternative to immediate)")
 
 
 class SubscriptionPause(BaseModel):
