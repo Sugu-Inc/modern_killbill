@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from billing.database import async_session_maker
+from billing.database import AsyncSessionLocal
 from billing.models.subscription import Subscription, SubscriptionStatus
 from billing.models.invoice import InvoiceStatus
 from billing.services.invoice_service import InvoiceService
@@ -31,7 +31,7 @@ async def process_billing_cycles() -> dict[str, int]:
     Returns:
         Dict with counts of processed subscriptions and generated invoices
     """
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         try:
             # Find subscriptions that need billing
             subscriptions_to_bill = await _find_subscriptions_due_for_billing(db)
@@ -111,7 +111,7 @@ async def process_trial_expirations() -> dict[str, int]:
     Returns:
         Dict with counts of processed trials
     """
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         try:
             # Find trials expiring today
             now = datetime.utcnow()
@@ -205,7 +205,7 @@ async def process_scheduled_plan_changes() -> dict[str, int]:
     Returns:
         Dict with counts of processed plan changes
     """
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         try:
             # Find subscriptions with pending plan changes
             now = datetime.utcnow()
