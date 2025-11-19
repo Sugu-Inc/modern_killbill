@@ -1,54 +1,67 @@
-"""Pydantic schemas for Payment model."""
-from datetime import datetime
-from uuid import UUID
-
+"""Pydantic schemas for payment entities."""
 from pydantic import BaseModel, Field, ConfigDict
+from uuid import UUID
+from datetime import datetime
+from typing import Optional, List
 
 from billing.models.payment import PaymentStatus
 
 
-class PaymentBase(BaseModel):
-    """Base payment schema with common fields."""
-
-    invoice_id: UUID = Field(..., description="Invoice ID this payment is for")
-    amount: int = Field(..., gt=0, description="Payment amount in cents")
-    currency: str = Field(default="USD", min_length=3, max_length=3, description="ISO 4217 currency code")
-
-
-class PaymentCreate(PaymentBase):
-    """Schema for creating a new payment."""
-
-    payment_method_id: UUID | None = Field(default=None, description="Payment method to use (or default)")
-    idempotency_key: str = Field(..., min_length=1, description="Idempotency key to prevent duplicate payments")
-
-
-class PaymentRetry(BaseModel):
-    """Schema for retrying a failed payment."""
-
-    payment_method_id: UUID | None = Field(default=None, description="New payment method to use (optional)")
-
-
-class Payment(PaymentBase):
-    """Schema for returning payment data."""
-
-    id: UUID
-    status: PaymentStatus
-    payment_gateway_transaction_id: str | None
-    payment_method_id: UUID | None
-    failure_message: str | None
-    idempotency_key: str
-    retry_count: int
-    next_retry_at: str | None
-    created_at: datetime
-    updated_at: datetime
+class PaymentResponse(BaseModel):
+    """Schema for payment response."""
 
     model_config = ConfigDict(from_attributes=True)
 
+    id: UUID
+    invoice_id: UUID
+    amount: int = Field(..., description="Amount in cents")
+    currency: str
+    status: PaymentStatus
+    payment_gateway_transaction_id: Optional[str] = Field(None, description="Stripe payment intent ID")
+    payment_method_id: Optional[UUID] = None
+    failure_message: Optional[str] = None
+    idempotency_key: str
+    retry_count: int = 0
+    next_retry_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class PaymentCreate(BaseModel):
+    """Schema for creating a payment."""
+
+    invoice_id: UUID
+    amount: int = Field(..., description="Amount in cents", gt=0)
+    currency: str = Field(..., min_length=3, max_length=3)
+    payment_method_id: Optional[UUID] = None
+    idempotency_key: str = Field(..., description="Idempotency key for duplicate prevention")
+
+
+class PaymentRetryResponse(BaseModel):
+    """Schema for payment retry schedule response."""
+
+    payment_id: UUID
+    retry_at: datetime
+    retry_count: int
+    max_retries: int = 4  # Days 3, 5, 7, 10
+
+
+# Alias for backward compatibility
+Payment = PaymentResponse
 
 class PaymentList(BaseModel):
-    """Schema for paginated payment list."""
+    """Schema for paginated list of payments."""
 
-    items: list[Payment]
+    items: List[PaymentResponse]
     total: int
     page: int
     page_size: int
+
+
+class PaymentRetry(BaseModel):
+    """Schema for payment retry information."""
+
+    payment_id: UUID
+    retry_at: Optional[datetime] = None
+    max_retries: int = 4
+
