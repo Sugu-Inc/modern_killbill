@@ -1,0 +1,408 @@
+"""
+Modern Subscription Billing Platform - GraphQL Schema
+
+This GraphQL API complements the REST API for complex queries requiring nested data.
+Use GraphQL for reads, REST for mutations.
+
+Authentication: Include Authorization: Bearer <token> header
+Rate Limiting: Same as REST (1000 req/hour)
+"""
+
+# ==============================================================================
+# Scalars
+# ==============================================================================
+scalar DateTime
+scalar JSON
+scalar Decimal
+
+# ==============================================================================
+# Enums
+# ==============================================================================
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum PlanInterval {
+  MONTH
+  YEAR
+}
+
+enum UsageType {
+  LICENSED
+  METERED
+  HYBRID
+}
+
+# ==============================================================================
+# Types
+# ==============================================================================
+
+type Account {
+  id: ID!
+  email: String!
+  name: String!
+  currency: String!
+  timezone: String
+  taxExempt: Boolean!
+  metadata: JSON
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Nested relationships (DataLoader batching prevents N+1)
+  subscriptions(
+    status: SubscriptionStatus
+    limit: Int = 20
+    cursor: String
+  ): SubscriptionConnection!
+
+  paymentMethods: [PaymentMethod!]!
+  defaultPaymentMethod: PaymentMethod
+
+  invoices(
+    status: InvoiceStatus
+    limit: Int = 20
+    cursor: String
+  ): InvoiceConnection!
+
+  credits(unapplied: Boolean): [Credit!]!
+  creditBalance(currency: String): Decimal!
+}
+
+type Plan {
+  id: ID!
+  name: String!
+  interval: PlanInterval!
+  amount: Int!
+  currency: String!
+  trialDays: Int!
+  usageType: UsageType!
+  tiers: [PricingTier!]
+  metadata: JSON
+  active: Boolean!
+  version: Int!
+  createdAt: DateTime!
+
+  # Aggregated data
+  activeSubscriptionCount: Int!
+}
+
+type PricingTier {
+  upTo: Int  # null = unlimited
+  unitPrice: Int!
+}
+
+type Subscription {
+  id: ID!
+  accountId: ID!
+  planId: ID!
+  status: SubscriptionStatus!
+  quantity: Int!
+  currentPeriodStart: DateTime!
+  currentPeriodEnd: DateTime!
+  trialEnd: DateTime
+  cancelledAt: DateTime
+  cancelAtPeriodEnd: Boolean!
+  pauseResumesAt: DateTime
+  externalKey: String
+  metadata: JSON
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Nested relationships
+  account: Account!
+  plan: Plan!
+
+  invoices(
+    status: InvoiceStatus
+    limit: Int = 20
+    cursor: String
+  ): InvoiceConnection!
+
+  usageRecords(
+    metric: String
+    startDate: DateTime
+    endDate: DateTime
+  ): [UsageRecord!]!
+
+  usageSummary(
+    metric: String!
+    startDate: DateTime!
+    endDate: DateTime!
+  ): UsageSummary!
+
+  history: [SubscriptionHistoryEvent!]!
+}
+
+type SubscriptionHistoryEvent {
+  id: ID!
+  eventType: String!
+  previousState: JSON
+  newState: JSON!
+  effectiveDate: DateTime!
+  createdAt: DateTime!
+}
+
+type Invoice {
+  id: ID!
+  number: String!
+  accountId: ID!
+  subscriptionId: ID
+  status: InvoiceStatus!
+  amountDue: Int!
+  amountPaid: Int!
+  tax: Int!
+  currency: String!
+  dueDate: DateTime!
+  paidAt: DateTime
+  voidedAt: DateTime
+  voidReason: String
+  lineItems: [InvoiceLineItem!]!
+  metadata: JSON
+  createdAt: DateTime!
+
+  # Nested relationships
+  account: Account!
+  subscription: Subscription
+  payments: [Payment!]!
+
+  # Computed fields
+  balanceDue: Int!  # amount_due - amount_paid
+  isPastDue: Boolean!
+}
+
+type InvoiceLineItem {
+  description: String!
+  quantity: Int!
+  unitAmount: Int!
+  amount: Int!
+}
+
+type Payment {
+  id: ID!
+  invoiceId: ID!
+  amount: Int!
+  currency: String!
+  status: PaymentStatus!
+  gatewayTransactionId: String
+  failureMessage: String
+  createdAt: DateTime!
+
+  # Nested relationships
+  invoice: Invoice!
+  paymentMethod: PaymentMethod
+}
+
+type PaymentMethod {
+  id: ID!
+  accountId: ID!
+  type: String!
+  cardLast4: String
+  cardBrand: String
+  cardExpMonth: Int
+  cardExpYear: Int
+  isDefault: Boolean!
+  createdAt: DateTime!
+}
+
+type UsageRecord {
+  id: ID!
+  subscriptionId: ID!
+  metric: String!
+  quantity: Decimal!
+  timestamp: DateTime!
+  metadata: JSON
+  createdAt: DateTime!
+}
+
+type UsageSummary {
+  metric: String!
+  totalQuantity: Decimal!
+  recordCount: Int!
+  startDate: DateTime!
+  endDate: DateTime!
+  estimatedCost: Int  # Based on plan tiers
+}
+
+type Credit {
+  id: ID!
+  accountId: ID!
+  amount: Int!
+  currency: String!
+  reason: String
+  appliedToInvoiceId: ID
+  createdAt: DateTime!
+
+  # Nested relationships
+  appliedToInvoice: Invoice
+}
+
+type AnalyticsMRR {
+  currentMrr: Decimal!
+  mrrGrowthRate: Decimal!
+  history: [MRRDataPoint!]!
+}
+
+type MRRDataPoint {
+  period: String!  # YYYY-MM
+  mrr: Decimal!
+  newMrr: Decimal!
+  expansionMrr: Decimal!
+  contractionMrr: Decimal!
+  churnedMrr: Decimal!
+}
+
+type ChurnMetrics {
+  customerChurnRate: Decimal!
+  revenueChurnRate: Decimal!
+  voluntaryChurn: Decimal!
+  involuntaryChurn: Decimal!
+  period: String!
+}
+
+# ==============================================================================
+# Connection Types (Cursor Pagination)
+# ==============================================================================
+
+type SubscriptionConnection {
+  edges: [SubscriptionEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type SubscriptionEdge {
+  node: Subscription!
+  cursor: String!
+}
+
+type InvoiceConnection {
+  edges: [InvoiceEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type InvoiceEdge {
+  node: Invoice!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# ==============================================================================
+# Query Root
+# ==============================================================================
+
+type Query {
+  # Account queries
+  account(id: ID!): Account
+  accounts(
+    email: String
+    limit: Int = 20
+    cursor: String
+  ): [Account!]!
+
+  # Plan queries
+  plan(id: ID!): Plan
+  plans(active: Boolean, currency: String): [Plan!]!
+
+  # Subscription queries
+  subscription(id: ID!): Subscription
+  subscriptions(
+    accountId: ID
+    status: SubscriptionStatus
+    limit: Int = 20
+    cursor: String
+  ): SubscriptionConnection!
+
+  # Invoice queries
+  invoice(id: ID, number: String): Invoice
+  invoices(
+    accountId: ID
+    subscriptionId: ID
+    status: InvoiceStatus
+    limit: Int = 20
+    cursor: String
+  ): InvoiceConnection!
+
+  # Payment queries
+  payment(id: ID!): Payment
+
+  # Analytics queries (requires billing_admin or finance_viewer role)
+  mrr: AnalyticsMRR!
+  churn(period: String): ChurnMetrics!
+
+  # Account-level aggregations
+  accountMRR(accountId: ID!): Decimal!
+}
+
+# ==============================================================================
+# Mutation Root (minimal - prefer REST for mutations)
+# ==============================================================================
+
+type Mutation {
+  """
+  Record usage for a subscription.
+  Idempotent via idempotencyKey.
+  """
+  recordUsage(input: RecordUsageInput!): RecordUsagePayload!
+}
+
+input RecordUsageInput {
+  subscriptionId: ID!
+  metric: String!
+  quantity: Decimal!
+  timestamp: DateTime!
+  idempotencyKey: String!
+  metadata: JSON
+}
+
+type RecordUsagePayload {
+  success: Boolean!
+  usageId: ID
+  errors: [String!]
+}
+
+# ==============================================================================
+# Subscription Root (Real-time updates via WebSockets)
+# ==============================================================================
+
+type Subscription {
+  """
+  Subscribe to invoice events for an account.
+  Receives notifications when invoices are created, paid, or voided.
+  """
+  invoiceUpdates(accountId: ID!): Invoice!
+
+  """
+  Subscribe to payment events for an account.
+  Receives notifications when payments succeed or fail.
+  """
+  paymentUpdates(accountId: ID!): Payment!
+
+  """
+  Subscribe to subscription events for an account.
+  Receives notifications when subscriptions change state.
+  """
+  subscriptionUpdates(accountId: ID!): Subscription!
+}
