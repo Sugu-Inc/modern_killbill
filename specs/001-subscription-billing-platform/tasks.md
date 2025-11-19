@@ -162,21 +162,21 @@
 
 ### Tests for US4
 
-- [ ] T053 [P] [US4] Integration test for invoice generation in backend/tests/integration/test_invoices.py (test_auto_generate_invoice_from_subscription, test_proration_on_mid_cycle_upgrade, test_apply_credit_to_invoice, test_void_invoice) [FYI]
-- [ ] T054 [P] [US4] Integration test for proration calculations in backend/tests/integration/test_invoices.py (test_calculate_proration_for_upgrade, test_calculate_proration_for_downgrade) [FYI]
+- [x] T053 [P] [US4] Integration test for invoice generation in backend/tests/integration/test_invoices.py (test_auto_generate_invoice_from_subscription, test_proration_on_mid_cycle_upgrade, test_apply_credit_to_invoice, test_void_invoice) [FYI]
+- [x] T054 [P] [US4] Integration test for proration calculations in backend/tests/integration/test_invoices.py (test_calculate_proration_for_upgrade, test_calculate_proration_for_downgrade) [FYI]
 
 ### Implementation for US4
 
-- [ ] T055 [P] [US4] Create Invoice model in backend/src/billing/models/invoice.py (UUID id, account_id FK, subscription_id FK, number auto-generated, status enum, amount_due, amount_paid, tax, currency, due_date, paid_at, line_items JSONB, metadata JSONB, created_at, updated_at - immutable after PAID) [FYI]
-- [ ] T056 [P] [US4] Create Pydantic schemas in backend/src/billing/schemas/invoice.py (InvoiceResponse, InvoiceLineItem, InvoiceStatus enum) [FYI]
-- [ ] T057 [US4] Create Alembic migration for invoices table (indexes on account_id, subscription_id, status, due_date) [Review - Low risk]
-- [ ] T058 [US4] Implement InvoiceService in backend/src/billing/services/invoice_service.py (generate_invoice_for_subscription, calculate_proration, apply_credit, void_invoice, calculate_tax via external service) [Review - High risk]
-- [ ] T059 [US4] Implement tax service integration in backend/src/billing/integrations/tax_service.py (calculate_tax using Stripe Tax API) [Review - High risk]
-- [ ] T060 [US4] Implement invoice number generator with sequential numbering in backend/src/billing/services/invoice_service.py [Review - Low risk]
-- [ ] T061 [US4] Implement GET /v1/invoices endpoint in backend/src/billing/api/v1/invoices.py (filter by account, status) [FYI]
-- [ ] T062 [US4] Implement GET /v1/invoices/{invoice_id} endpoint in backend/src/billing/api/v1/invoices.py [FYI]
-- [ ] T063 [US4] Implement POST /v1/invoices/{invoice_id}/void endpoint in backend/src/billing/api/v1/invoices.py [Review - High risk]
-- [ ] T064 [US4] Add invoice generation to billing cycle worker in backend/src/billing/workers/billing_cycle.py (integrate InvoiceService) [Review - High risk]
+- [x] T055 [P] [US4] Create Invoice model in backend/src/billing/models/invoice.py (UUID id, account_id FK, subscription_id FK, number auto-generated, status enum, amount_due, amount_paid, tax, currency, due_date, paid_at, line_items JSONB, metadata JSONB, created_at, updated_at - immutable after PAID) [FYI]
+- [x] T056 [P] [US4] Create Pydantic schemas in backend/src/billing/schemas/invoice.py (InvoiceResponse, InvoiceLineItem, InvoiceStatus enum) [FYI]
+- [x] T057 [US4] Create Alembic migration for invoices table (indexes on account_id, subscription_id, status, due_date) [Review - Low risk]
+- [x] T058 [US4] Implement InvoiceService in backend/src/billing/services/invoice_service.py (generate_invoice_for_subscription, calculate_proration, apply_credit, void_invoice, calculate_tax via external service) [Review - High risk]
+- [x] T059 [US4] Implement tax service integration in backend/src/billing/integrations/tax_service.py (calculate_tax using Stripe Tax API) [Review - High risk]
+- [x] T060 [US4] Implement invoice number generator with sequential numbering in backend/src/billing/services/invoice_service.py [Review - Low risk]
+- [x] T061 [US4] Implement GET /v1/invoices endpoint in backend/src/billing/api/v1/invoices.py (filter by account, status) [FYI]
+- [x] T062 [US4] Implement GET /v1/invoices/{invoice_id} endpoint in backend/src/billing/api/v1/invoices.py [FYI]
+- [x] T063 [US4] Implement POST /v1/invoices/{invoice_id}/void endpoint in backend/src/billing/api/v1/invoices.py [Review - High risk]
+- [x] T064 [US4] Add invoice generation to billing cycle worker in backend/src/billing/workers/billing_cycle.py (integrate InvoiceService) [Review - High risk]
 
 **Checkpoint**: US4 complete - invoices auto-generate with tax, proration works, voiding works
 
