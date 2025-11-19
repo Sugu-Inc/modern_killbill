@@ -43,7 +43,7 @@ class Plan(Base):
     extra_metadata = Column(JSONB, nullable=False, default=dict)
 
     # Relationships
-    subscriptions = relationship("Subscription", back_populates="plan")
+    subscriptions = relationship("Subscription", foreign_keys="Subscription.plan_id", back_populates="plan")
 
     def __repr__(self) -> str:
         """String representation."""
