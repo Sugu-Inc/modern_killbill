@@ -27,7 +27,7 @@
 
 ---
 
-### User Story 1 - Quick Account Setup (Priority: P1)
+### User Story 1 - Quick Account Setup (Priority: P1) **[Review - Low risk]**
 
 **As a** SaaS founder,
 **I want to** create customer accounts in seconds with minimal required fields,
@@ -46,7 +46,7 @@
 
 ---
 
-### User Story 2 - Dead Simple Pricing (Priority: P1)
+### User Story 2 - Dead Simple Pricing (Priority: P1) **[Review - High risk]**
 
 **As a** product manager,
 **I want to** define pricing plans with clear tier names and simple structure,
@@ -65,7 +65,7 @@
 
 ---
 
-### User Story 3 - One-Click Subscriptions (Priority: P1)
+### User Story 3 - One-Click Subscriptions (Priority: P1) **[Review - High risk]**
 
 **As a** sales rep,
 **I want to** create a subscription with one action,
@@ -84,7 +84,7 @@
 
 ---
 
-### User Story 4 - Smart Invoicing (Priority: P1)
+### User Story 4 - Smart Invoicing (Priority: P1) **[Review - High risk]**
 
 **As a** finance team,
 **I want** invoices to be automatically generated, calculated, and sent,
@@ -103,7 +103,7 @@
 
 ---
 
-### User Story 5 - Worry-Free Payments (Priority: P1)
+### User Story 5 - Worry-Free Payments (Priority: P1) **[Review - High risk]**
 
 **As a** SaaS operator,
 **I want** payment retries to happen automatically with smart scheduling,
@@ -122,7 +122,7 @@
 
 ---
 
-### User Story 6 - Effortless Plan Changes (Priority: P1)
+### User Story 6 - Effortless Plan Changes (Priority: P1) **[Review - High risk]**
 
 **As a** customer success manager,
 **I want** plan upgrades/downgrades to "just work" with automatic proration,
@@ -141,7 +141,7 @@
 
 ---
 
-### User Story 7 - Simple Usage Billing (Priority: P2)
+### User Story 7 - Simple Usage Billing (Priority: P2) **[Review - High risk]**
 
 **As an** API platform owner,
 **I want to** track usage and bill customers based on consumption,
@@ -160,7 +160,7 @@
 
 ---
 
-### User Story 8 - Customer-Friendly Overdue (Priority: P2)
+### User Story 8 - Customer-Friendly Overdue (Priority: P2) **[Review - Low risk]**
 
 **As a** billing manager,
 **I want** gentle dunning that preserves customer relationships,
@@ -179,7 +179,7 @@
 
 ---
 
-### User Story 9 - Self-Service Credits (Priority: P2)
+### User Story 9 - Self-Service Credits (Priority: P2) **[Review - High risk]**
 
 **As a** customer support rep,
 **I want to** apply credits in seconds via simple interface,
@@ -198,7 +198,7 @@
 
 ---
 
-### User Story 10 - Global Ready (Priority: P2)
+### User Story 10 - Global Ready (Priority: P2) **[Review - Low risk]**
 
 **As an** international SaaS business,
 **I want to** bill customers in their local currency,
@@ -217,7 +217,7 @@
 
 ---
 
-### User Story 11 - Real-Time Integration (Priority: P2)
+### User Story 11 - Real-Time Integration (Priority: P2) **[Review - Low risk]**
 
 **As a** developer,
 **I want** real-time notifications for all billing events,
@@ -236,7 +236,7 @@
 
 ---
 
-### User Story 12 - Smart Tax Handling (Priority: P2)
+### User Story 12 - Smart Tax Handling (Priority: P2) **[Review - High risk]**
 
 **As a** compliance-conscious business,
 **I want** automatic tax calculation based on customer location,
@@ -255,7 +255,7 @@
 
 ---
 
-### User Story 13 - Beautiful Invoices (Priority: P3)
+### User Story 13 - Beautiful Invoices (Priority: P3) **[FYI]**
 
 **As a** SaaS business owner,
 **I want** professional invoice documents with my branding,
@@ -274,7 +274,7 @@
 
 ---
 
-### User Story 14 - Flexible API Access (Priority: P3)
+### User Story 14 - Flexible API Access (Priority: P3) **[FYI]**
 
 **As a** developer,
 **I want** complete API for flexible data querying,
@@ -293,7 +293,7 @@
 
 ---
 
-### User Story 15 - Analytics Ready (Priority: P3)
+### User Story 15 - Analytics Ready (Priority: P3) **[FYI]**
 
 **As a** data analyst,
 **I want** subscription metrics (MRR, churn, LTV) calculated automatically,
@@ -312,7 +312,7 @@
 
 ---
 
-### User Story 16 - Pause Subscriptions (Priority: P3)
+### User Story 16 - Pause Subscriptions (Priority: P3) **[Review - Low risk]**
 
 **As a** retention-focused business,
 **I want** customers to pause subscriptions temporarily,
