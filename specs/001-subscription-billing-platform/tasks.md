@@ -288,17 +288,17 @@
 
 ### Tests for US9
 
-- [ ] T099 [P] [US9] Integration test for credits in backend/tests/integration/test_credits.py (test_create_credit_auto_applies_to_next_invoice, test_void_invoice_creates_credit, test_credit_reduces_invoice_balance) [FYI]
+- [x] T099 [P] [US9] Integration test for credits in backend/tests/integration/test_credits.py (test_create_credit_auto_applies_to_next_invoice, test_void_invoice_creates_credit, test_credit_reduces_invoice_balance) [FYI]
 
 ### Implementation for US9
 
-- [ ] T100 [P] [US9] Create Credit model in backend/src/billing/models/credit.py (UUID id, account_id FK, amount, currency, reason, applied_to_invoice_id FK nullable, created_at) [FYI]
-- [ ] T101 [P] [US9] Create Pydantic schemas in backend/src/billing/schemas/credit.py (CreditCreate, CreditResponse) [FYI]
+- [x] T100 [P] [US9] Create Credit model in backend/src/billing/models/credit.py (UUID id, account_id FK, amount, currency, reason, applied_to_invoice_id FK nullable, created_at) [FYI]
+- [x] T101 [P] [US9] Create Pydantic schemas in backend/src/billing/schemas/credit.py (CreditCreate, CreditResponse) [FYI]
 - [ ] T102 [US9] Create Alembic migration for credits table (indexes on account_id, applied_to_invoice_id) [Review - Low risk]
-- [ ] T103 [US9] Implement CreditService in backend/src/billing/services/credit_service.py (create_credit, apply_credit_to_invoice, get_available_credits_for_account) [Review - High risk]
-- [ ] T104 [US9] Integrate credit application into InvoiceService in backend/src/billing/services/invoice_service.py (auto-apply credits when generating invoice) [Review - High risk]
-- [ ] T105 [US9] Implement POST /v1/credits endpoint in backend/src/billing/api/v1/credits.py [Review - Low risk]
-- [ ] T106 [US9] Implement GET /v1/accounts/{account_id}/credits endpoint in backend/src/billing/api/v1/accounts.py [FYI]
+- [x] T103 [US9] Implement CreditService in backend/src/billing/services/credit_service.py (create_credit, apply_credit_to_invoice, get_available_credits_for_account) [Review - High risk]
+- [x] T104 [US9] Integrate credit application into InvoiceService in backend/src/billing/services/invoice_service.py (auto-apply credits when generating invoice) [Review - High risk]
+- [x] T105 [US9] Implement POST /v1/credits endpoint in backend/src/billing/api/v1/credits.py [Review - Low risk]
+- [x] T106 [US9] Implement GET /v1/accounts/{account_id}/credits endpoint in backend/src/billing/api/v1/accounts.py [FYI]
 
 **Checkpoint**: US9 complete - credits can be created and auto-apply to invoices
 

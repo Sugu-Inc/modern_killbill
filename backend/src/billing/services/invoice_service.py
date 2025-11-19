@@ -159,6 +159,9 @@ class InvoiceService:
         await self.db.flush()
         await self.db.refresh(invoice)
 
+        # Auto-apply available credits to invoice (T104)
+        await self._auto_apply_credits(invoice)
+
         # Auto-attempt payment for the invoice (T076)
         await self._auto_attempt_payment(invoice)
 
@@ -603,3 +606,92 @@ class InvoiceService:
             # Payment attempt failed, but invoice is still created
             # Retry logic will handle this via background workers
             pass
+
+    async def _auto_apply_credits(self, invoice: Invoice) -> None:
+        """
+        Automatically apply available credits to an invoice (T104).
+
+        Credits are applied in FIFO order to reduce the invoice amount_due.
+        This is called during invoice generation to automatically use
+        account credits.
+
+        Args:
+            invoice: Invoice to apply credits to
+        """
+        if invoice.status != InvoiceStatus.OPEN:
+            return
+
+        # Import here to avoid circular dependency
+        from billing.services.credit_service import CreditService
+
+        credit_service = CreditService(self.db)
+
+        try:
+            # Apply all available credits to this invoice
+            credits_applied = await credit_service.apply_credits_to_invoice(
+                invoice_id=invoice.id
+            )
+
+            if credits_applied > 0:
+                # Refresh invoice to get updated amount_due
+                await self.db.refresh(invoice)
+
+        except Exception:
+            # If credit application fails, continue with invoice generation
+            # Credits can be applied manually later
+            pass
+
+    async def void_invoice(self, invoice_id: UUID, reason: str = "Voided") -> Invoice:
+        """
+        Void an invoice and create a refund credit if it was already paid.
+
+        Voiding an invoice:
+        - Changes status to VOID
+        - If invoice was PAID, creates a credit for the paid amount
+        - Cannot void DRAFT invoices (delete instead)
+
+        Args:
+            invoice_id: Invoice UUID to void
+            reason: Reason for voiding
+
+        Returns:
+            Voided invoice
+
+        Raises:
+            ValueError: If invoice doesn't exist or cannot be voided
+        """
+        # Load invoice
+        result = await self.db.execute(
+            select(Invoice).where(Invoice.id == invoice_id)
+        )
+        invoice = result.scalar_one_or_none()
+
+        if not invoice:
+            raise ValueError(f"Invoice {invoice_id} not found")
+
+        if invoice.status == InvoiceStatus.VOID:
+            raise ValueError(f"Invoice {invoice_id} is already voided")
+
+        original_status = invoice.status
+
+        # Void the invoice
+        invoice.status = InvoiceStatus.VOID
+        invoice.extra_metadata["void_reason"] = reason
+        invoice.extra_metadata["voided_at"] = datetime.utcnow().isoformat()
+        invoice.extra_metadata["original_status"] = original_status.value
+
+        # If invoice was paid, create a refund credit
+        if original_status == InvoiceStatus.PAID and invoice.amount_paid > 0:
+            from billing.services.credit_service import CreditService
+
+            credit_service = CreditService(self.db)
+            await credit_service.create_refund_credit(
+                invoice_id=invoice.id,
+                amount=invoice.amount_paid,
+                reason=f"Refund from voided invoice #{invoice.number}: {reason}",
+            )
+
+        await self.db.flush()
+        await self.db.refresh(invoice)
+
+        return invoice

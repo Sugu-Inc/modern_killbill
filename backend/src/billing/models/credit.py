@@ -1,5 +1,6 @@
 """Credit model for account credits and refunds."""
-from sqlalchemy import Column, Integer, String, ForeignKey
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -20,6 +21,8 @@ class Credit(Base):
     currency = Column(String(3), nullable=False, default="USD")
     reason = Column(String, nullable=True)  # Refund, discount, goodwill, etc.
     applied_to_invoice_id = Column(UUID(as_uuid=True), ForeignKey("invoices.id"), nullable=True, index=True)
+    applied_at = Column(DateTime, nullable=True)  # When credit was applied to invoice
+    expires_at = Column(DateTime, nullable=True)  # Credit expiration date (None for no expiration)
 
     # Relationships
     account = relationship("Account", back_populates="credits")

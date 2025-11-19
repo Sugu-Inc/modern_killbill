@@ -14,8 +14,10 @@ from billing.schemas.payment_method import (
     PaymentMethodList,
     PaymentMethodUpdate,
 )
+from billing.schemas.credit import Credit, CreditList, CreditBalance
 from billing.services.account_service import AccountService
 from billing.services.payment_method_service import PaymentMethodService
+from billing.services.credit_service import CreditService
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -281,3 +283,78 @@ async def delete_payment_method(
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+
+# Credit endpoints for accounts
+
+
+@router.get("/{account_id}/credits", response_model=CreditList)
+async def list_account_credits(
+    account_id: UUID,
+    page: int = 1,
+    page_size: int = 50,
+    include_applied: bool = True,
+    include_expired: bool = True,
+    db: AsyncSession = Depends(get_db),
+) -> CreditList:
+    """
+    List credits for an account.
+
+    - **page**: Page number (1-indexed, default: 1)
+    - **page_size**: Items per page (default: 50)
+    - **include_applied**: Include already-applied credits (default: True)
+    - **include_expired**: Include expired credits (default: True)
+    """
+    # Verify account exists
+    account_service = AccountService(db)
+    account = await account_service.get_account(account_id)
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account {account_id} not found",
+        )
+
+    credit_service = CreditService(db)
+    credits, total = await credit_service.list_credits_for_account(
+        account_id=account_id,
+        page=page,
+        page_size=page_size,
+        include_applied=include_applied,
+        include_expired=include_expired,
+    )
+
+    return CreditList(
+        items=credits,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
+
+
+@router.get("/{account_id}/credits/balance", response_model=CreditBalance)
+async def get_account_credit_balance(
+    account_id: UUID,
+    currency: str = "USD",
+    db: AsyncSession = Depends(get_db),
+) -> CreditBalance:
+    """
+    Get credit balance summary for an account.
+
+    Returns total credits, available credits, expired credits, and applied credits.
+    """
+    # Verify account exists
+    account_service = AccountService(db)
+    account = await account_service.get_account(account_id)
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account {account_id} not found",
+        )
+
+    credit_service = CreditService(db)
+    balance = await credit_service.get_account_credit_balance(
+        account_id=account_id,
+        currency=currency,
+    )
+
+    return balance
