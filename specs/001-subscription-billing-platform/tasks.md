@@ -197,14 +197,14 @@
 
 - [x] T067 [P] [US5] Create Payment model in backend/src/billing/models/payment.py (UUID id, invoice_id FK, amount, currency, status enum, payment_gateway_transaction_id, payment_method_id FK, failure_message, idempotency_key, created_at) [FYI]
 - [x] T068 [P] [US5] Create Pydantic schemas in backend/src/billing/schemas/payment.py (PaymentResponse, PaymentStatus enum) [FYI]
-- [ ] T069 [US5] Create Alembic migration for payments table (indexes on invoice_id, status, idempotency_key) [Review - Low risk]
+- [x] T069 [US5] Create Alembic migration for payments table (indexes on invoice_id, status, idempotency_key) [Review - Low risk]
 - [x] T070 [US5] Implement PaymentService in backend/src/billing/services/payment_service.py (attempt_payment with Stripe integration, schedule_retry, process_retry_schedule [day 3,5,7,10], mark_account_overdue) [Review - High risk]
 - [ ] T071 [US5] Extend Stripe adapter in backend/src/billing/integrations/stripe.py (charge_payment_method with idempotency key, handle_webhook_events for payment confirmations) [Review - High risk]
 - [x] T072 [US5] Implement POST /v1/payments/retry endpoint in backend/src/billing/api/v1/payments.py (manual retry trigger) [Review - Low risk]
 - [x] T073 [US5] Implement GET /v1/payments endpoint in backend/src/billing/api/v1/payments.py (filter by invoice, status) [FYI]
 - [ ] T074 [US5] Implement Stripe webhook handler in backend/src/billing/api/webhooks/stripe.py (verify signature, process payment_intent.succeeded, payment_intent.payment_failed) [Review - High risk]
 - [ ] T075 [US5] Implement background worker for payment retries in backend/src/billing/workers/payment_retry.py (ARQ scheduled job to process retry queue) [Review - High risk]
-- [ ] T076 [US5] Add payment attempt to billing cycle worker in backend/src/billing/workers/billing_cycle.py (auto-attempt payment after invoice generation) [Review - High risk]
+- [x] T076 [US5] Add payment attempt to billing cycle worker in backend/src/billing/workers/billing_cycle.py (auto-attempt payment after invoice generation) [Review - High risk]
 
 **Checkpoint**: US5 complete - payments auto-attempt, retries work, overdue handling implemented
 

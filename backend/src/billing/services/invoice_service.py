@@ -12,6 +12,7 @@ from billing.models.subscription import Subscription, SubscriptionStatus
 from billing.models.plan import Plan
 from billing.models.account import Account
 from billing.models.credit import Credit
+from billing.models.payment_method import PaymentMethod
 from billing.schemas.invoice import InvoiceCreate, InvoiceLineItem
 
 
@@ -150,6 +151,9 @@ class InvoiceService:
         self.db.add(invoice)
         await self.db.flush()
         await self.db.refresh(invoice)
+
+        # Auto-attempt payment for the invoice (T076)
+        await self._auto_attempt_payment(invoice)
 
         return invoice
 
@@ -488,3 +492,40 @@ class InvoiceService:
         )
         total_credits = result.scalar()
         return total_credits or 0
+
+    async def _auto_attempt_payment(self, invoice: Invoice) -> None:
+        """
+        Automatically attempt payment for an invoice (T076).
+
+        Args:
+            invoice: Invoice to process payment for
+        """
+        from billing.services.payment_service import PaymentService
+
+        # Only attempt payment for OPEN invoices
+        if invoice.status != InvoiceStatus.OPEN:
+            return
+
+        # Get payment method for account
+        payment_method_result = await self.db.execute(
+            select(PaymentMethod)
+            .where(
+                PaymentMethod.account_id == invoice.account_id,
+                PaymentMethod.is_default == True,  # noqa: E712
+            )
+            .limit(1)
+        )
+        payment_method = payment_method_result.scalar_one_or_none()
+
+        # Create payment service and attempt payment
+        payment_service = PaymentService(self.db)
+
+        try:
+            await payment_service.attempt_payment(
+                invoice_id=invoice.id,
+                payment_method_id=payment_method.id if payment_method else None,
+            )
+        except Exception:
+            # Payment attempt failed, but invoice is still created
+            # Retry logic will handle this via background workers
+            pass

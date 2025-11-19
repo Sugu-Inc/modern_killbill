@@ -106,8 +106,8 @@ async def test_payment_retry_schedule(db_session: AsyncSession) -> None:
             assert len(retry_schedule) == len(expected_days)
 
             for retry, expected_day in zip(retry_schedule, expected_days):
-                assert retry["retry_at"] >= datetime.utcnow() + timedelta(days=expected_day - 1)
-                assert retry["retry_at"] <= datetime.utcnow() + timedelta(days=expected_day + 1)
+                assert retry.retry_at >= datetime.utcnow() + timedelta(days=expected_day - 1)
+                assert retry.retry_at <= datetime.utcnow() + timedelta(days=expected_day + 1)
 
 
 @pytest.mark.asyncio
@@ -155,7 +155,7 @@ async def test_successful_payment_marks_invoice_paid(db_session: AsyncSession) -
         await db_session.commit()
 
         assert updated_payment.status == PaymentStatus.SUCCEEDED
-        assert updated_payment.gateway_transaction_id == "test_txn_123"
+        assert updated_payment.payment_gateway_transaction_id == "test_txn_123"
 
         # Verify invoice status is PAID
         await db_session.refresh(invoice)

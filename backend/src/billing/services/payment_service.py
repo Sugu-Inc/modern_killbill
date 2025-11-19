@@ -188,7 +188,7 @@ class PaymentService:
 
         if invoice:
             invoice.status = InvoiceStatus.PAID
-            invoice.paid_at = datetime.utcnow().isoformat()
+            invoice.paid_at = datetime.utcnow()
 
         await self.db.flush()
         return payment
