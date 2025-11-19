@@ -13,6 +13,7 @@ Build a simplified, modern subscription billing platform that delivers 80% of bu
 **Primary Dependencies**: FastAPI, Pydantic v2, SQLAlchemy 2.0, Alembic, Stripe SDK, httpx
 **Storage**: PostgreSQL 15+ (managed cloud: AWS RDS/Aurora or equivalent)
 **Caching**: Redis 7+ (ElastiCache or equivalent)
+**Observability**: structlog (JSON logging), Prometheus (metrics), OpenTelemetry (tracing), Alertmanager (alerting)
 **Testing**: pytest, pytest-asyncio, Faker, httpx for API tests
 **Target Platform**: Linux server (Docker containers on Kubernetes)
 **Project Type**: Web backend (API-first, no frontend in this repository)
@@ -204,6 +205,7 @@ scripts/
 7. **Observability & Monitoring**
    - Decision: Logging, metrics, tracing stack
    - Research: structlog configuration, Prometheus metrics, OpenTelemetry
+   - **Addresses**: FR-145 to FR-156 (health checks, logging, metrics, tracing, alerting)
 
 **Outputs**: `research.md` with decisions, rationale, and code examples
 
@@ -225,6 +227,8 @@ scripts/
 
 2. **contracts/**
    - `openapi.yaml`: Full OpenAPI 3.0 specification for REST API
+     - Includes health/monitoring endpoints: `/health` (liveness), `/health/ready` (readiness), `/metrics` (Prometheus)
+     - Covers all business endpoints: accounts, plans, subscriptions, invoices, payments, usage, credits, analytics
    - `schema.graphql`: GraphQL schema with queries, mutations, types
    - `webhooks.yaml`: Webhook event payload specifications
 
