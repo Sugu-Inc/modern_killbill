@@ -190,18 +190,18 @@
 
 ### Tests for US5
 
-- [ ] T065 [P] [US5] Integration test for payment processing in backend/tests/integration/test_payments.py (test_auto_attempt_payment_on_invoice_creation, test_payment_retry_schedule, test_successful_payment_marks_invoice_paid, test_all_retries_failed_marks_account_overdue) [FYI]
-- [ ] T066 [P] [US5] Integration test for idempotency in backend/tests/integration/test_payments.py (test_duplicate_charge_prevention) [FYI]
+- [x] T065 [P] [US5] Integration test for payment processing in backend/tests/integration/test_payments.py (test_auto_attempt_payment_on_invoice_creation, test_payment_retry_schedule, test_successful_payment_marks_invoice_paid, test_all_retries_failed_marks_account_overdue) [FYI]
+- [x] T066 [P] [US5] Integration test for idempotency in backend/tests/integration/test_payments.py (test_duplicate_charge_prevention) [FYI]
 
 ### Implementation for US5
 
-- [ ] T067 [P] [US5] Create Payment model in backend/src/billing/models/payment.py (UUID id, invoice_id FK, amount, currency, status enum, payment_gateway_transaction_id, payment_method_id FK, failure_message, idempotency_key, created_at) [FYI]
-- [ ] T068 [P] [US5] Create Pydantic schemas in backend/src/billing/schemas/payment.py (PaymentResponse, PaymentStatus enum) [FYI]
+- [x] T067 [P] [US5] Create Payment model in backend/src/billing/models/payment.py (UUID id, invoice_id FK, amount, currency, status enum, payment_gateway_transaction_id, payment_method_id FK, failure_message, idempotency_key, created_at) [FYI]
+- [x] T068 [P] [US5] Create Pydantic schemas in backend/src/billing/schemas/payment.py (PaymentResponse, PaymentStatus enum) [FYI]
 - [ ] T069 [US5] Create Alembic migration for payments table (indexes on invoice_id, status, idempotency_key) [Review - Low risk]
-- [ ] T070 [US5] Implement PaymentService in backend/src/billing/services/payment_service.py (attempt_payment with Stripe integration, schedule_retry, process_retry_schedule [day 3,5,7,10], mark_account_overdue) [Review - High risk]
+- [x] T070 [US5] Implement PaymentService in backend/src/billing/services/payment_service.py (attempt_payment with Stripe integration, schedule_retry, process_retry_schedule [day 3,5,7,10], mark_account_overdue) [Review - High risk]
 - [ ] T071 [US5] Extend Stripe adapter in backend/src/billing/integrations/stripe.py (charge_payment_method with idempotency key, handle_webhook_events for payment confirmations) [Review - High risk]
-- [ ] T072 [US5] Implement POST /v1/payments/retry endpoint in backend/src/billing/api/v1/payments.py (manual retry trigger) [Review - Low risk]
-- [ ] T073 [US5] Implement GET /v1/payments endpoint in backend/src/billing/api/v1/payments.py (filter by invoice, status) [FYI]
+- [x] T072 [US5] Implement POST /v1/payments/retry endpoint in backend/src/billing/api/v1/payments.py (manual retry trigger) [Review - Low risk]
+- [x] T073 [US5] Implement GET /v1/payments endpoint in backend/src/billing/api/v1/payments.py (filter by invoice, status) [FYI]
 - [ ] T074 [US5] Implement Stripe webhook handler in backend/src/billing/api/webhooks/stripe.py (verify signature, process payment_intent.succeeded, payment_intent.payment_failed) [Review - High risk]
 - [ ] T075 [US5] Implement background worker for payment retries in backend/src/billing/workers/payment_retry.py (ARQ scheduled job to process retry queue) [Review - High risk]
 - [ ] T076 [US5] Add payment attempt to billing cycle worker in backend/src/billing/workers/billing_cycle.py (auto-attempt payment after invoice generation) [Review - High risk]
