@@ -14,6 +14,7 @@
 - Q: What is the target system availability/uptime SLA? → A: 99.9% uptime (43 minutes downtime/month)
 - Q: What is the data retention policy for different data types? → A: Invoices/Payments: 7 years, Audit logs: 3 years, Deleted accounts: 30 days
 - Q: What admin user roles and permission levels are needed? → A: Billing Admin, Support Rep, Finance Viewer, Super Admin
+- Q: What are the disaster recovery targets (RTO/RPO)? → A: RTO: 4 hours, RPO: 15 minutes
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -653,6 +654,8 @@
 - **SC-041**: Database backup and restore completes in under 30 minutes
 - **SC-042**: Monitoring detects 100% of critical errors within 5 minutes
 - **SC-051**: System maintains 99.9% uptime (maximum 43 minutes downtime per month)
+- **SC-052**: Disaster recovery achieves RTO of 4 hours (maximum recovery time)
+- **SC-053**: Disaster recovery achieves RPO of 15 minutes (maximum data loss)
 
 #### Compliance & Security
 
