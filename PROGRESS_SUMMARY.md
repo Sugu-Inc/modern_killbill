@@ -4,10 +4,10 @@
 
 ## Overall Progress
 
-- **Completed**: 31/180 tasks (17.2%)
-- **MVP Scope**: 31/82 tasks (37.8% of MVP complete)
-- **Commits**: 8 commits
-- **Lines of Code**: ~10,000 lines
+- **Completed**: 64/180 tasks (35.6%)
+- **MVP Scope**: 64/82 tasks (78.0% of MVP complete)
+- **Commits**: 10 commits
+- **Lines of Code**: ~12,500 lines
 
 ## What's Implemented
 
@@ -127,15 +127,44 @@
 - Complete audit trail via SubscriptionHistory
 - Current period tracking
 
-## What Remains
+### ✅ User Story 4: Invoicing (T053-T064) - 12 tasks
 
-### 🔄 User Story 4: Invoicing (T053-T064) - 12 tasks
-- InvoiceService with generation logic
-- Invoice number generation
-- Line item calculation
-- Tax calculation integration
-- Invoice PDF generation
-- API endpoints
+**Services**:
+- InvoiceService: generate, prorate, void, apply_credit, list
+- Invoice number generation (sequential INV-XXXXXX format)
+- Proration calculation for mid-cycle changes
+- Tax calculation with Stripe Tax API integration
+- Credit auto-application to invoices
+
+**Tax Integration**:
+- TaxService with Stripe Tax API
+- Location-based tax calculation
+- VAT ID validation with EU reverse charge
+- Tax exemption handling
+- Fallback to simple 10% tax
+
+**API Endpoints** (v1/invoices):
+- GET /v1/invoices - List invoices (paginated, filterable by account/subscription/status)
+- GET /v1/invoices/{id} - Get invoice details
+- POST /v1/invoices/{id}/void - Void invoice with reason
+
+**Background Workers**:
+- billing_cycle.py: Auto-generate invoices at period end
+- process_trial_expirations: Convert TRIALING → ACTIVE
+- process_scheduled_plan_changes: Apply downgrades at period end
+- Subscription renewal with period extension
+
+**Features**:
+- Automatic invoice generation from subscriptions
+- Proration for upgrades/downgrades
+- Sequential invoice numbering
+- Tax calculation with Stripe Tax API
+- Invoice voiding with audit trail
+- Credit application
+- Immutability enforcement (paid invoices)
+- Line item breakdown with JSONB
+
+## What Remains
 
 ### 🔄 User Story 5: Payments (T065-T076) - 12 tasks
 - PaymentService with retry logic
@@ -146,10 +175,11 @@
 - API endpoints
 
 ### 🔄 User Story 6: Plan Changes (T077-T082) - 6 tasks
-- Proration calculation
-- Credit generation
-- Immediate vs. scheduled changes
-- Already partially implemented in SubscriptionService
+- Proration calculation ✅ (implemented in InvoiceService)
+- Credit generation ✅ (implemented in InvoiceService)
+- Immediate vs. scheduled changes ✅ (implemented in SubscriptionService)
+- Integration with SubscriptionService needed
+- API endpoint updates needed
 
 ### 🔄 User Story 7: Usage Billing (T083-T094) - 12 tasks
 - UsageRecordService
