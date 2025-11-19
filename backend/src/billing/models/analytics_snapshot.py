@@ -19,7 +19,7 @@ class AnalyticsSnapshot(Base):
     value = Column(Integer, nullable=False)  # Metric value (cents for revenue, basis points for percentages)
     period = Column(Date, nullable=False, default=date.today, index=True)  # Date of snapshot
     currency = Column(String(3), nullable=True)  # For revenue metrics
-    metadata = Column(JSONB, nullable=False, default=dict)  # Additional context
+    extra_metadata = Column(JSONB, nullable=False, default=dict)  # Additional context
 
     def __repr__(self) -> str:
         """String representation."""

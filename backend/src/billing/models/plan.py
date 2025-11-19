@@ -40,7 +40,7 @@ class Plan(Base):
     tiers = Column(JSONB, nullable=True)  # Usage tier configuration [{up_to, unit_amount}]
     active = Column(Boolean, nullable=False, default=True, index=True)
     version = Column(Integer, nullable=False, default=1)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_metadata = Column(JSONB, nullable=False, default=dict)
 
     # Relationships
     subscriptions = relationship("Subscription", back_populates="plan")

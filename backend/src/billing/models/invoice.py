@@ -39,7 +39,7 @@ class Invoice(Base):
     paid_at = Column(DateTime, nullable=True)
     voided_at = Column(DateTime, nullable=True)
     line_items = Column(JSONB, nullable=False, default=list)  # [{description, amount, quantity, type}]
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_metadata = Column(JSONB, nullable=False, default=dict)
 
     # Relationships
     account = relationship("Account", back_populates="invoices")

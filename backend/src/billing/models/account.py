@@ -33,7 +33,7 @@ class Account(Base):
     vat_id = Column(String, nullable=True)  # EU VAT ID for reverse charge
     status = Column(SQLEnum(AccountStatus), nullable=False, default=AccountStatus.ACTIVE)
     deleted_at = Column(String, nullable=True)  # Soft delete timestamp
-    metadata = Column(JSONB, nullable=False, default=dict)  # Extensible custom fields
+    extra_metadata = Column(JSONB, nullable=False, default=dict)  # Extensible custom fields
 
     # Relationships
     payment_methods = relationship("PaymentMethod", back_populates="account", cascade="all, delete-orphan")

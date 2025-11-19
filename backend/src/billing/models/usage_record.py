@@ -21,7 +21,7 @@ class UsageRecord(Base):
     quantity = Column(Integer, nullable=False)  # Number of units consumed
     timestamp = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
     idempotency_key = Column(String, nullable=False, unique=True, index=True)  # Prevents duplicates
-    metadata = Column(JSONB, nullable=False, default=dict)
+    extra_metadata = Column(JSONB, nullable=False, default=dict)
 
     # Relationships
     subscription = relationship("Subscription", back_populates="usage_records")
