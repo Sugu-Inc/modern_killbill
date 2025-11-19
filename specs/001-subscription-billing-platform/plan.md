@@ -28,7 +28,7 @@ Build a simplified, modern subscription billing platform that delivers 80% of bu
 **Scale/Scope**:
 - 100,000 active subscriptions
 - 16 user stories (P1-P3 prioritized)
-- 144 functional requirements
+- 156 functional requirements
 - 4 admin roles (RBAC)
 
 ## Constitution Check

@@ -564,6 +564,21 @@
 - **FR-143**: System MUST retain audit logs for 3 years for security and compliance purposes
 - **FR-144**: System MUST soft-delete account data with 30-day retention before permanent deletion
 
+#### Observability & Monitoring (FR-145 to FR-156)
+
+- **FR-145**: System MUST expose health check endpoint returning service status within 100ms
+- **FR-146**: System MUST expose readiness check verifying database and Redis connectivity
+- **FR-147**: System MUST expose metrics endpoint in Prometheus format for monitoring
+- **FR-148**: System MUST log all API requests with request_id, method, path, status_code, and duration_ms in JSON format
+- **FR-149**: System MUST log all errors with stack traces, context, and correlation IDs
+- **FR-150**: System MUST emit business metrics (invoices_generated_total, payments_attempted_total, mrr_dollars)
+- **FR-151**: System MUST emit performance metrics (api_request_duration_seconds, db_query_duration_seconds, db_connection_pool_usage)
+- **FR-152**: System MUST create distributed traces for all API requests spanning database queries and external API calls
+- **FR-153**: System MUST trigger alerts when error rate exceeds 1% over 5-minute window
+- **FR-154**: System MUST trigger alerts when p95 API latency exceeds 500ms over 5-minute window
+- **FR-155**: System MUST trigger alerts for database connection failures or pool exhaustion
+- **FR-156**: System MUST trigger alerts when payment gateway failure rate exceeds 5% over 15-minute window
+
 ### Key Entities
 
 - **Account**: Customer with billing information. Contains: email, name, currency, timezone, default_payment_method_id, tax_exempt, metadata, created_at.

@@ -44,6 +44,8 @@ servers:
     description: Local Development
 
 tags:
+  - name: Health
+    description: Service health and monitoring
   - name: Accounts
     description: Customer account management
   - name: Plans
@@ -65,6 +67,135 @@ security:
   - BearerAuth: []
 
 paths:
+  # ============================================================================
+  # HEALTH & MONITORING
+  # ============================================================================
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check (liveness probe)
+      description: |
+        Basic health check for Kubernetes liveness probe.
+        Returns 200 if service is alive (process running).
+        Does not check external dependencies.
+      operationId: healthCheck
+      security: []  # No auth required for health checks
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-11-19T12:00:00Z"
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness check (readiness probe)
+      description: |
+        Readiness check for Kubernetes readiness probe.
+        Verifies service can handle requests by checking:
+        - Database connectivity
+        - Redis connectivity
+        - Stripe API reachability (optional)
+        Returns 200 only if all critical dependencies are healthy.
+      operationId: readinessCheck
+      security: []  # No auth required for health checks
+      responses:
+        '200':
+          description: Service is ready to accept traffic
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                    example: true
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [connected, disconnected]
+                        example: connected
+                      redis:
+                        type: string
+                        enum: [connected, disconnected]
+                        example: connected
+                      stripe:
+                        type: string
+                        enum: [reachable, unreachable, unknown]
+                        example: reachable
+                  timestamp:
+                    type: string
+                    format: date-time
+        '503':
+          description: Service not ready (dependencies unavailable)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                    example: false
+                  checks:
+                    type: object
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus metrics endpoint
+      description: |
+        Exposes metrics in Prometheus text format for scraping.
+        Includes business metrics (MRR, invoices generated, payment success rate)
+        and system metrics (request latency, error rate, database pool usage).
+      operationId: prometheusMetrics
+      security: []  # No auth required for metrics scraping
+      responses:
+        '200':
+          description: Metrics in Prometheus text format
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP invoices_generated_total Total invoices generated
+                  # TYPE invoices_generated_total counter
+                  invoices_generated_total 12543
+
+                  # HELP payments_attempted_total Total payment attempts
+                  # TYPE payments_attempted_total counter
+                  payments_attempted_total{status="succeeded"} 8432
+                  payments_attempted_total{status="failed"} 234
+
+                  # HELP mrr_dollars Monthly Recurring Revenue in dollars
+                  # TYPE mrr_dollars gauge
+                  mrr_dollars 125000.50
+
+                  # HELP api_request_duration_seconds API request duration
+                  # TYPE api_request_duration_seconds histogram
+                  api_request_duration_seconds_bucket{method="POST",endpoint="/subscriptions",le="0.1"} 5432
+                  api_request_duration_seconds_bucket{method="POST",endpoint="/subscriptions",le="0.5"} 6234
+                  api_request_duration_seconds_sum{method="POST",endpoint="/subscriptions"} 123.45
+                  api_request_duration_seconds_count{method="POST",endpoint="/subscriptions"} 6543
+
   # ============================================================================
   # ACCOUNTS
   # ============================================================================
