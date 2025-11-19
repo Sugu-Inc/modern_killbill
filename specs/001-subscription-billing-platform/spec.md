@@ -13,6 +13,7 @@
 
 - Q: What is the target system availability/uptime SLA? → A: 99.9% uptime (43 minutes downtime/month)
 - Q: What is the data retention policy for different data types? → A: Invoices/Payments: 7 years, Audit logs: 3 years, Deleted accounts: 30 days
+- Q: What admin user roles and permission levels are needed? → A: Billing Admin, Support Rep, Finance Viewer, Super Admin
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -550,7 +551,7 @@
 - **FR-135**: System MUST support data protection compliant data export within 48 hours
 - **FR-136**: System MUST support data protection compliant data deletion with cascade
 - **FR-137**: System MUST be payment card industry compliant via tokenization (no card storage)
-- **FR-138**: System MUST support role-based access control for admin users
+- **FR-138**: System MUST support role-based access control with four admin roles: Super Admin (full system access), Billing Admin (plans, pricing, subscriptions), Support Rep (customer accounts, credits, invoices), Finance Viewer (read-only analytics and reports)
 - **FR-139**: System MUST hash API keys securely
 - **FR-140**: System MUST support IP whitelisting for API access (optional)
 
