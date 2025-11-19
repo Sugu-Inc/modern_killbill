@@ -15,6 +15,7 @@
 - Q: What is the data retention policy for different data types? → A: Invoices/Payments: 7 years, Audit logs: 3 years, Deleted accounts: 30 days
 - Q: What admin user roles and permission levels are needed? → A: Billing Admin, Support Rep, Finance Viewer, Super Admin
 - Q: What are the disaster recovery targets (RTO/RPO)? → A: RTO: 4 hours, RPO: 15 minutes
+- Q: Does the system support quantity/seat-based pricing for subscriptions? → A: Support per-seat pricing with quantity field on subscription
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -405,7 +406,7 @@
 - **FR-024**: System MUST validate plan structure before saving
 - **FR-025**: System MUST allow plan metadata
 
-#### Subscription Management (FR-026 to FR-040)
+#### Subscription Management (FR-026 to FR-041)
 
 - **FR-026**: System MUST create subscription, invoice, and payment attempt in single atomic transaction
 - **FR-027**: System MUST support subscription states: TRIAL, ACTIVE, PAUSED, CANCELLED, EXPIRED
@@ -422,145 +423,146 @@
 - **FR-038**: System MUST allow subscription backdating for migrations
 - **FR-039**: System MUST support subscription metadata
 - **FR-040**: System MUST block new subscriptions on overdue accounts
+- **FR-041**: System MUST support quantity/seat-based pricing with quantity field on subscriptions (e.g., $10/user/month × 5 users = $50/month)
 
-#### Invoice Management (FR-041 to FR-055)
+#### Invoice Management (FR-042 to FR-056)
 
-- **FR-041**: System MUST auto-generate invoices with sequential numbering
-- **FR-042**: System MUST support invoice states: DRAFT, OPEN, PAID, VOID
-- **FR-043**: System MUST auto-finalize invoices (no manual commit step)
-- **FR-044**: System MUST calculate tax via external service
-- **FR-045**: System MUST generate invoice documents via template rendering
-- **FR-046**: System MUST auto-send invoice to customer on creation
-- **FR-047**: System MUST support invoice line items with description, quantity, amount
-- **FR-048**: System MUST apply account credits automatically to new invoices
-- **FR-049**: System MUST support invoice voiding with reason
-- **FR-050**: System MUST support supplemental invoices for late usage charges
-- **FR-051**: System MUST calculate invoice balance as (amount - payments - credits)
-- **FR-052**: System MUST support invoice due date (typically +30 days from invoice date)
-- **FR-053**: System MUST prevent invoice modification after finalization (immutable)
-- **FR-054**: System MUST support invoice preview (dry-run before committing)
-- **FR-055**: System MUST export invoices via standard interface
+- **FR-042**: System MUST auto-generate invoices with sequential numbering
+- **FR-043**: System MUST support invoice states: DRAFT, OPEN, PAID, VOID
+- **FR-044**: System MUST auto-finalize invoices (no manual commit step)
+- **FR-045**: System MUST calculate tax via external service
+- **FR-046**: System MUST generate invoice documents via template rendering
+- **FR-047**: System MUST auto-send invoice to customer on creation
+- **FR-048**: System MUST support invoice line items with description, quantity, amount
+- **FR-049**: System MUST apply account credits automatically to new invoices
+- **FR-050**: System MUST support invoice voiding with reason
+- **FR-051**: System MUST support supplemental invoices for late usage charges
+- **FR-052**: System MUST calculate invoice balance as (amount - payments - credits)
+- **FR-053**: System MUST support invoice due date (typically +30 days from invoice date)
+- **FR-054**: System MUST prevent invoice modification after finalization (immutable)
+- **FR-055**: System MUST support invoice preview (dry-run before committing)
+- **FR-056**: System MUST export invoices via standard interface
 
-#### Payment Processing (FR-056 to FR-070)
+#### Payment Processing (FR-057 to FR-071)
 
-- **FR-056**: System MUST auto-attempt payment when invoice is created
-- **FR-057**: System MUST integrate with payment gateway for processing
-- **FR-058**: System MUST support payment states: PENDING, SUCCEEDED, FAILED
-- **FR-059**: System MUST retry failed payments at day 3, 5, 7, 10 (smart schedule)
-- **FR-060**: System MUST handle async notifications from payment gateway for payment status
-- **FR-061**: System MUST use idempotency keys to prevent duplicate charges
-- **FR-062**: System MUST support refunds via payment gateway
-- **FR-063**: System MUST send payment receipt notification on successful payment
-- **FR-064**: System MUST send payment failure notification with update payment link
-- **FR-065**: System MUST update invoice status to PAID when full payment received
-- **FR-066**: System MUST create account credit for overpayments
-- **FR-067**: System MUST maintain payment audit log with gateway transaction IDs
-- **FR-068**: System MUST support payment method verification (zero-value authorization)
-- **FR-069**: System MUST handle partial payments (apply to invoice balance)
-- **FR-070**: System MUST reconcile payments with payment gateway daily
+- **FR-057**: System MUST auto-attempt payment when invoice is created
+- **FR-058**: System MUST integrate with payment gateway for processing
+- **FR-059**: System MUST support payment states: PENDING, SUCCEEDED, FAILED
+- **FR-060**: System MUST retry failed payments at day 3, 5, 7, 10 (smart schedule)
+- **FR-061**: System MUST handle async notifications from payment gateway for payment status
+- **FR-062**: System MUST use idempotency keys to prevent duplicate charges
+- **FR-063**: System MUST support refunds via payment gateway
+- **FR-064**: System MUST send payment receipt notification on successful payment
+- **FR-065**: System MUST send payment failure notification with update payment link
+- **FR-066**: System MUST update invoice status to PAID when full payment received
+- **FR-067**: System MUST create account credit for overpayments
+- **FR-068**: System MUST maintain payment audit log with gateway transaction IDs
+- **FR-069**: System MUST support payment method verification (zero-value authorization)
+- **FR-070**: System MUST handle partial payments (apply to invoice balance)
+- **FR-071**: System MUST reconcile payments with payment gateway daily
 
-#### Usage Billing (FR-071 to FR-080)
+#### Usage Billing (FR-072 to FR-081)
 
-- **FR-071**: System MUST accept usage events via interface with unique identifiers
-- **FR-072**: System MUST deduplicate usage events by unique identifier
-- **FR-073**: System MUST aggregate usage by subscription and billing period
-- **FR-074**: System MUST calculate usage charges based on tiered pricing
-- **FR-075**: System MUST include usage charges on invoices with detailed breakdown
-- **FR-076**: System MUST support multiple usage metrics per subscription (api_calls, storage_gb, etc.)
-- **FR-077**: System MUST accept usage timestamp for backdating events
-- **FR-078**: System MUST generate supplemental invoice for late usage (within 7 days of period end)
-- **FR-079**: System MUST support usage caps with overage billing or rejection
-- **FR-080**: System MUST export usage data for analytics
+- **FR-072**: System MUST accept usage events via interface with unique identifiers
+- **FR-073**: System MUST deduplicate usage events by unique identifier
+- **FR-074**: System MUST aggregate usage by subscription and billing period
+- **FR-075**: System MUST calculate usage charges based on tiered pricing
+- **FR-076**: System MUST include usage charges on invoices with detailed breakdown
+- **FR-077**: System MUST support multiple usage metrics per subscription (api_calls, storage_gb, etc.)
+- **FR-078**: System MUST accept usage timestamp for backdating events
+- **FR-079**: System MUST generate supplemental invoice for late usage (within 7 days of period end)
+- **FR-080**: System MUST support usage caps with overage billing or rejection
+- **FR-081**: System MUST export usage data for analytics
 
-#### Overdue Management (FR-081 to FR-090)
+#### Overdue Management (FR-082 to FR-091)
 
-- **FR-081**: System MUST evaluate overdue status daily
-- **FR-082**: System MUST support 3 overdue states: CURRENT, WARNING (7 days), BLOCKED (14 days)
-- **FR-083**: System MUST send dunning notification at each state transition
-- **FR-084**: System MUST prevent new subscriptions on BLOCKED accounts
-- **FR-085**: System MUST block subscription access on BLOCKED accounts (via notification to application)
-- **FR-086**: System MUST auto-clear overdue status when payment received
-- **FR-087**: System MUST support manual overdue override for disputes
-- **FR-088**: System MUST maintain overdue history per account
-- **FR-089**: System MUST use friendly dunning notification templates (not threatening)
-- **FR-090**: System MUST calculate overdue days from invoice due date
+- **FR-082**: System MUST evaluate overdue status daily
+- **FR-083**: System MUST support 3 overdue states: CURRENT, WARNING (7 days), BLOCKED (14 days)
+- **FR-084**: System MUST send dunning notification at each state transition
+- **FR-085**: System MUST prevent new subscriptions on BLOCKED accounts
+- **FR-086**: System MUST block subscription access on BLOCKED accounts (via notification to application)
+- **FR-087**: System MUST auto-clear overdue status when payment received
+- **FR-088**: System MUST support manual overdue override for disputes
+- **FR-089**: System MUST maintain overdue history per account
+- **FR-090**: System MUST use friendly dunning notification templates (not threatening)
+- **FR-091**: System MUST calculate overdue days from invoice due date
 
-#### Credits & Adjustments (FR-091 to FR-095)
+#### Credits & Adjustments (FR-092 to FR-096)
 
-- **FR-091**: System MUST allow creating account credits
-- **FR-092**: System MUST auto-apply credits to next invoice
-- **FR-093**: System MUST track credit reason and timestamp
-- **FR-094**: System MUST support credit balance reporting per account
-- **FR-095**: System MUST notify customer when credit is applied
+- **FR-092**: System MUST allow creating account credits
+- **FR-093**: System MUST auto-apply credits to next invoice
+- **FR-094**: System MUST track credit reason and timestamp
+- **FR-095**: System MUST support credit balance reporting per account
+- **FR-096**: System MUST notify customer when credit is applied
 
-#### Tax Calculation (FR-096 to FR-100)
+#### Tax Calculation (FR-097 to FR-101)
 
-- **FR-096**: System MUST integrate with external tax calculation service
-- **FR-097**: System MUST calculate tax based on customer location and product taxability
-- **FR-098**: System MUST respect account tax_exempt flag (no tax calculation)
-- **FR-099**: System MUST validate EU VAT IDs via external validation service
-- **FR-100**: System MUST include tax breakdown on invoices (rate, jurisdiction, amount)
+- **FR-097**: System MUST integrate with external tax calculation service
+- **FR-098**: System MUST calculate tax based on customer location and product taxability
+- **FR-099**: System MUST respect account tax_exempt flag (no tax calculation)
+- **FR-100**: System MUST validate EU VAT IDs via external validation service
+- **FR-101**: System MUST include tax breakdown on invoices (rate, jurisdiction, amount)
 
-#### Multi-Currency (FR-101 to FR-105)
+#### Multi-Currency (FR-102 to FR-106)
 
-- **FR-101**: System MUST support account currency at creation (immutable)
-- **FR-102**: System MUST price plans in major currencies (USD, EUR, GBP, CAD, AUD, JPY)
-- **FR-103**: System MUST format currency according to locale
-- **FR-104**: System MUST process payments in account currency
-- **FR-105**: System MUST prevent currency changes on existing accounts
+- **FR-102**: System MUST support account currency at creation (immutable)
+- **FR-103**: System MUST price plans in major currencies (USD, EUR, GBP, CAD, AUD, JPY)
+- **FR-104**: System MUST format currency according to locale
+- **FR-105**: System MUST process payments in account currency
+- **FR-106**: System MUST prevent currency changes on existing accounts
 
-#### Event Notifications & Integration (FR-106 to FR-115)
+#### Event Notifications & Integration (FR-107 to FR-116)
 
-- **FR-106**: System MUST send event notifications for all major events (invoice.*, payment.*, subscription.*)
-- **FR-107**: System MUST deliver event notifications within 5 seconds of event
-- **FR-108**: System MUST retry failed notifications 5 times with exponential backoff
-- **FR-109**: System MUST support notification signature verification
-- **FR-110**: System MUST allow event filtering per endpoint
-- **FR-111**: System MUST maintain notification delivery audit log
-- **FR-112**: System MUST support multiple notification endpoints
-- **FR-113**: System MUST send invoice.created, invoice.paid, payment.failed, subscription.cancelled events minimum
-- **FR-114**: System MUST include full event payload in notification (not just IDs)
-- **FR-115**: System MUST allow manual notification retry
+- **FR-107**: System MUST send event notifications for all major events (invoice.*, payment.*, subscription.*)
+- **FR-108**: System MUST deliver event notifications within 5 seconds of event
+- **FR-109**: System MUST retry failed notifications 5 times with exponential backoff
+- **FR-110**: System MUST support notification signature verification
+- **FR-111**: System MUST allow event filtering per endpoint
+- **FR-112**: System MUST maintain notification delivery audit log
+- **FR-113**: System MUST support multiple notification endpoints
+- **FR-114**: System MUST send invoice.created, invoice.paid, payment.failed, subscription.cancelled events minimum
+- **FR-115**: System MUST include full event payload in notification (not just IDs)
+- **FR-116**: System MUST allow manual notification retry
 
-#### Analytics & Reporting (FR-116 to FR-120)
+#### Analytics & Reporting (FR-117 to FR-121)
 
-- **FR-116**: System MUST calculate MRR (Monthly Recurring Revenue) updated hourly
-- **FR-117**: System MUST calculate churn rate (voluntary and involuntary) monthly
-- **FR-118**: System MUST expose analytics endpoints for MRR, churn, and LTV
-- **FR-119**: System MUST export data for external analytics tools
-- **FR-120**: System MUST send events to analytics platforms via integration
+- **FR-117**: System MUST calculate MRR (Monthly Recurring Revenue) updated hourly
+- **FR-118**: System MUST calculate churn rate (voluntary and involuntary) monthly
+- **FR-119**: System MUST expose analytics endpoints for MRR, churn, and LTV
+- **FR-120**: System MUST export data for external analytics tools
+- **FR-121**: System MUST send events to analytics platforms via integration
 
-#### API & Developer Experience (FR-121 to FR-130)
+#### API & Developer Experience (FR-122 to FR-131)
 
-- **FR-121**: System MUST expose standard API with complete specification
-- **FR-122**: System MUST expose flexible query API for complex data retrieval
-- **FR-123**: System MUST use cursor-based pagination for all list endpoints
-- **FR-124**: System MUST authenticate API requests via bearer token
-- **FR-125**: System MUST rate limit API requests (1000 req/hour per API key)
-- **FR-126**: System MUST provide interactive API documentation
-- **FR-127**: System MUST return clear error messages with remediation hints
-- **FR-128**: System MUST support API versioning
-- **FR-129**: System MUST respond to API requests efficiently
-- **FR-130**: System MUST support event notifications for real-time updates (alternative to polling)
+- **FR-122**: System MUST expose standard API with complete specification
+- **FR-123**: System MUST expose flexible query API for complex data retrieval
+- **FR-124**: System MUST use cursor-based pagination for all list endpoints
+- **FR-125**: System MUST authenticate API requests via bearer token
+- **FR-126**: System MUST rate limit API requests (1000 req/hour per API key)
+- **FR-127**: System MUST provide interactive API documentation
+- **FR-128**: System MUST return clear error messages with remediation hints
+- **FR-129**: System MUST support API versioning
+- **FR-130**: System MUST respond to API requests efficiently
+- **FR-131**: System MUST support event notifications for real-time updates (alternative to polling)
 
-#### Security & Compliance (FR-131 to FR-140)
+#### Security & Compliance (FR-132 to FR-141)
 
-- **FR-131**: System MUST use modern authentication for API access
-- **FR-132**: System MUST encrypt all data at rest
-- **FR-133**: System MUST use encrypted connections for all API communications
-- **FR-134**: System MUST maintain audit log of all data mutations
-- **FR-135**: System MUST support data protection compliant data export within 48 hours
-- **FR-136**: System MUST support data protection compliant data deletion with cascade
-- **FR-137**: System MUST be payment card industry compliant via tokenization (no card storage)
-- **FR-138**: System MUST support role-based access control with four admin roles: Super Admin (full system access), Billing Admin (plans, pricing, subscriptions), Support Rep (customer accounts, credits, invoices), Finance Viewer (read-only analytics and reports)
-- **FR-139**: System MUST hash API keys securely
-- **FR-140**: System MUST support IP whitelisting for API access (optional)
+- **FR-132**: System MUST use modern authentication for API access
+- **FR-133**: System MUST encrypt all data at rest
+- **FR-134**: System MUST use encrypted connections for all API communications
+- **FR-135**: System MUST maintain audit log of all data mutations
+- **FR-136**: System MUST support data protection compliant data export within 48 hours
+- **FR-137**: System MUST support data protection compliant data deletion with cascade
+- **FR-138**: System MUST be payment card industry compliant via tokenization (no card storage)
+- **FR-139**: System MUST support role-based access control with four admin roles: Super Admin (full system access), Billing Admin (plans, pricing, subscriptions), Support Rep (customer accounts, credits, invoices), Finance Viewer (read-only analytics and reports)
+- **FR-140**: System MUST hash API keys securely
+- **FR-141**: System MUST support IP whitelisting for API access (optional)
 
-#### Data Retention (FR-141 to FR-143)
+#### Data Retention (FR-142 to FR-144)
 
-- **FR-141**: System MUST retain invoices and payment records for 7 years for financial compliance
-- **FR-142**: System MUST retain audit logs for 3 years for security and compliance purposes
-- **FR-143**: System MUST soft-delete account data with 30-day retention before permanent deletion
+- **FR-142**: System MUST retain invoices and payment records for 7 years for financial compliance
+- **FR-143**: System MUST retain audit logs for 3 years for security and compliance purposes
+- **FR-144**: System MUST soft-delete account data with 30-day retention before permanent deletion
 
 ### Key Entities
 
@@ -568,7 +570,7 @@
 
 - **Plan**: Pricing definition. Contains: name, interval (month/year), amount, currency, trial_days, usage_type (licensed/metered), tiers (for usage), metadata, active (boolean).
 
-- **Subscription**: Customer enrollment in plan. Contains: account_id, plan_id, status (TRIAL/ACTIVE/PAUSED/CANCELLED), current_period_start, current_period_end, cancel_at_period_end, pause_resumes_at, metadata.
+- **Subscription**: Customer enrollment in plan. Contains: account_id, plan_id, status (TRIAL/ACTIVE/PAUSED/CANCELLED), quantity (for per-seat/per-license pricing, default: 1), current_period_start, current_period_end, cancel_at_period_end, pause_resumes_at, metadata.
 
 - **Invoice**: Billing statement. Contains: account_id, subscription_id, number (auto-generated), status (DRAFT/OPEN/PAID/VOID), amount_due, amount_paid, tax, currency, due_date, paid_at, line_items (array), created_at.
 
