@@ -1,0 +1,128 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: billing-api
+  namespace: billing
+  labels:
+    app: billing-api
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: billing-api
+      component: backend
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - billing
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: billing-api-alerts
+  namespace: billing
+  labels:
+    app: billing-api
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+  - name: billing-api
+    interval: 30s
+    rules:
+    # FR-153: Alert on error rate >1% (5min window)
+    - alert: BillingAPIHighErrorRate
+      expr: |
+        (
+          sum(rate(http_requests_total{job="billing-api",status=~"5.."}[5m]))
+          /
+          sum(rate(http_requests_total{job="billing-api"}[5m]))
+        ) > 0.01
+      for: 5m
+      labels:
+        severity: critical
+        component: billing-api
+      annotations:
+        summary: "Billing API error rate above 1%"
+        description: "Error rate is {{ $value | humanizePercentage }} (threshold: 1%)"
+
+    # FR-154: Alert on p95 latency >500ms (5min window)
+    - alert: BillingAPIHighLatency
+      expr: |
+        histogram_quantile(0.95, sum(rate(api_request_duration_seconds_bucket{job="billing-api"}[5m])) by (le)) > 0.5
+      for: 5m
+      labels:
+        severity: warning
+        component: billing-api
+      annotations:
+        summary: "Billing API p95 latency above 500ms"
+        description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 500ms)"
+
+    # FR-155: Alert on database connection failures
+    - alert: BillingAPIDatabaseConnectionFailure
+      expr: |
+        increase(database_errors_total{job="billing-api"}[5m]) > 5
+        or
+        db_connection_pool_usage{job="billing-api"} > 0.9
+      for: 2m
+      labels:
+        severity: critical
+        component: billing-api
+      annotations:
+        summary: "Billing API database connection issues"
+        description: "Database connection failures or pool exhaustion detected"
+
+    # FR-156: Alert on payment gateway failure rate >5% (15min window)
+    - alert: BillingAPIPaymentGatewayFailures
+      expr: |
+        (
+          sum(rate(stripe_errors_total{job="billing-api"}[15m]))
+          /
+          sum(rate(stripe_requests_total{job="billing-api"}[15m]))
+        ) > 0.05
+      for: 15m
+      labels:
+        severity: critical
+        component: billing-api
+      annotations:
+        summary: "Payment gateway failure rate above 5%"
+        description: "Payment gateway failure rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+    # Additional alerts
+    - alert: BillingAPIPodDown
+      expr: |
+        kube_deployment_status_replicas_available{deployment="billing-api"} < 2
+      for: 5m
+      labels:
+        severity: critical
+        component: billing-api
+      annotations:
+        summary: "Billing API has fewer than 2 pods available"
+        description: "Only {{ $value }} pods are available (minimum: 2)"
+
+    - alert: BillingAPIHighMemoryUsage
+      expr: |
+        container_memory_usage_bytes{pod=~"billing-api-.*"} / container_spec_memory_limit_bytes{pod=~"billing-api-.*"} > 0.9
+      for: 10m
+      labels:
+        severity: warning
+        component: billing-api
+      annotations:
+        summary: "Billing API container memory usage above 90%"
+        description: "Memory usage is {{ $value | humanizePercentage }}"
+
+    - alert: BillingAPIHighCPUUsage
+      expr: |
+        rate(container_cpu_usage_seconds_total{pod=~"billing-api-.*"}[5m]) / container_spec_cpu_quota{pod=~"billing-api-.*"} * 100000 > 90
+      for: 10m
+      labels:
+        severity: warning
+        component: billing-api
+      annotations:
+        summary: "Billing API container CPU usage above 90%"
+        description: "CPU usage is {{ $value | humanizePercentage }}"

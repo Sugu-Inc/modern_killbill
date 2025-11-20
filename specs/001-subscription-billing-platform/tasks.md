@@ -500,11 +500,11 @@
 
 ### Docker & Deployment
 
-- [ ] T172 [P] Create Dockerfile for backend with Python 3.11 slim base [FYI]
-- [ ] T173 [P] Create Kubernetes deployment manifests in k8s/ (deployment.yaml, service.yaml, ingress.yaml, configmap.yaml) [FYI]
-- [ ] T174 [P] Configure liveness probe to use /health endpoint in k8s deployment [FYI]
-- [ ] T175 [P] Configure readiness probe to use /health/ready endpoint in k8s deployment [FYI]
-- [ ] T176 [P] Add Prometheus scraping annotations to k8s service for /metrics endpoint [FYI]
+- [x] T172 [P] Create Dockerfile for backend with Python 3.11 slim base [FYI]
+- [x] T173 [P] Create Kubernetes deployment manifests in k8s/ (deployment.yaml, service.yaml, ingress.yaml, configmap.yaml) [FYI]
+- [x] T174 [P] Configure liveness probe to use /health endpoint in k8s deployment [FYI]
+- [x] T175 [P] Configure readiness probe to use /health/ready endpoint in k8s deployment [FYI]
+- [x] T176 [P] Add Prometheus scraping annotations to k8s service for /metrics endpoint [FYI]
 
 ### Final Integration Tests
 
