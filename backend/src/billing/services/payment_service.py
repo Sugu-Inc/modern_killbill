@@ -191,6 +191,10 @@ class PaymentService:
             invoice.paid_at = datetime.utcnow()
 
         await self.db.flush()
+
+        # Emit webhook event for payment.succeeded (T120)
+        await self._emit_webhook_event("payment.succeeded", payment)
+
         return payment
 
     async def mark_payment_failed(
@@ -346,3 +350,46 @@ class PaymentService:
         await self.db.flush()
 
         return payment
+
+    async def _emit_webhook_event(self, event_type: str, payment: "Payment") -> None:
+        """
+        Emit webhook event for payment state changes.
+
+        Args:
+            event_type: Event type (e.g., "payment.succeeded", "payment.failed")
+            payment: Payment object
+        """
+        try:
+            from billing.services.webhook_service import WebhookService
+            from billing.api.v1.webhook_endpoints import get_endpoints_for_event
+
+            # Get webhook endpoints subscribed to this event
+            endpoints = get_endpoints_for_event(event_type)
+
+            if not endpoints:
+                return  # No subscribers
+
+            webhook_service = WebhookService(self.db)
+
+            # Create webhook payload
+            payload = {
+                "payment_id": str(payment.id),
+                "invoice_id": str(payment.invoice_id) if payment.invoice_id else None,
+                "account_id": str(payment.account_id) if payment.account_id else None,
+                "amount": payment.amount,
+                "currency": payment.currency,
+                "status": payment.status.value,
+                "payment_method_id": str(payment.payment_method_id) if payment.payment_method_id else None,
+            }
+
+            # Create webhook event for each subscribed endpoint
+            for endpoint_url in endpoints:
+                await webhook_service.create_event(
+                    event_type=event_type,
+                    payload=payload,
+                    endpoint_url=endpoint_url,
+                )
+
+        except Exception:
+            # Don't let webhook failures break payment operations
+            pass

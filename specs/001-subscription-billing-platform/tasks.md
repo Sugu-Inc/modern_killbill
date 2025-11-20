@@ -334,17 +334,17 @@
 
 ### Tests for US11
 
-- [ ] T113 [P] [US11] Integration test for webhooks in backend/tests/integration/test_webhooks.py (test_invoice_created_event_sent, test_payment_succeeded_event_sent, test_webhook_retry_on_failure) [FYI]
+- [x] T113 [P] [US11] Integration test for webhooks in backend/tests/integration/test_webhooks.py (test_invoice_created_event_sent, test_payment_succeeded_event_sent, test_webhook_retry_on_failure) [FYI]
 
 ### Implementation for US11
 
-- [ ] T114 [P] [US11] Create WebhookEvent model in backend/src/billing/models/webhook_event.py (UUID id, event_type, payload JSONB, endpoint_url, status enum, retry_count, created_at, delivered_at) [FYI]
-- [ ] T115 [P] [US11] Create Pydantic schemas in backend/src/billing/schemas/webhook_event.py (WebhookEventResponse, WebhookEventType enum) [FYI]
+- [x] T114 [P] [US11] Create WebhookEvent model in backend/src/billing/models/webhook_event.py (UUID id, event_type, payload JSONB, endpoint_url, status enum, retry_count, created_at, delivered_at) [FYI]
+- [x] T115 [P] [US11] Create Pydantic schemas in backend/src/billing/schemas/webhook_event.py (WebhookEventResponse, WebhookEventType enum) [FYI]
 - [ ] T116 [US11] Create Alembic migration for webhook_events table (indexes on status, event_type) [Review - Low risk]
-- [ ] T117 [US11] Implement WebhookService in backend/src/billing/services/webhook_service.py (send_event, retry_failed_events with exponential backoff [5 retries], filter_events_by_category) [Review - Low risk]
-- [ ] T118 [US11] Implement POST /v1/webhook-endpoints endpoint in backend/src/billing/api/v1/webhook_endpoints.py (configure webhook endpoint URL) [Review - Low risk]
-- [ ] T119 [US11] Implement background worker for webhook delivery in backend/src/billing/workers/webhook_delivery.py (ARQ async job for non-blocking delivery) [Review - Low risk]
-- [ ] T120 [US11] Integrate webhook events into InvoiceService, PaymentService, SubscriptionService (emit events for state changes) [Review - Low risk]
+- [x] T117 [US11] Implement WebhookService in backend/src/billing/services/webhook_service.py (send_event, retry_failed_events with exponential backoff [5 retries], filter_events_by_category) [Review - Low risk]
+- [x] T118 [US11] Implement POST /v1/webhook-endpoints endpoint in backend/src/billing/api/v1/webhook_endpoints.py (configure webhook endpoint URL) [Review - Low risk]
+- [x] T119 [US11] Implement background worker for webhook delivery in backend/src/billing/workers/webhook_delivery.py (ARQ async job for non-blocking delivery) [Review - Low risk]
+- [x] T120 [US11] Integrate webhook events into InvoiceService, PaymentService, SubscriptionService (emit events for state changes) [Review - Low risk]
 
 **Checkpoint**: US11 complete - webhooks deliver in real-time with retry logic
 

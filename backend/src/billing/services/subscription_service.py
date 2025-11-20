@@ -107,6 +107,10 @@ class SubscriptionService:
         )
 
         await self.db.refresh(subscription)
+
+        # Emit webhook event for subscription.created (T120)
+        await self._emit_webhook_event("subscription.created", subscription)
+
         return subscription
 
     async def get_subscription(self, subscription_id: UUID) -> Subscription | None:
@@ -497,3 +501,46 @@ class SubscriptionService:
         )
         self.db.add(history)
         await self.db.flush()
+
+    async def _emit_webhook_event(self, event_type: str, subscription: "Subscription") -> None:
+        """
+        Emit webhook event for subscription state changes.
+
+        Args:
+            event_type: Event type (e.g., "subscription.created", "subscription.updated")
+            subscription: Subscription object
+        """
+        try:
+            from billing.services.webhook_service import WebhookService
+            from billing.api.v1.webhook_endpoints import get_endpoints_for_event
+
+            # Get webhook endpoints subscribed to this event
+            endpoints = get_endpoints_for_event(event_type)
+
+            if not endpoints:
+                return  # No subscribers
+
+            webhook_service = WebhookService(self.db)
+
+            # Create webhook payload
+            payload = {
+                "subscription_id": str(subscription.id),
+                "account_id": str(subscription.account_id),
+                "plan_id": str(subscription.plan_id),
+                "status": subscription.status.value,
+                "quantity": subscription.quantity,
+                "current_period_start": subscription.current_period_start.isoformat() if subscription.current_period_start else None,
+                "current_period_end": subscription.current_period_end.isoformat() if subscription.current_period_end else None,
+            }
+
+            # Create webhook event for each subscribed endpoint
+            for endpoint_url in endpoints:
+                await webhook_service.create_event(
+                    event_type=event_type,
+                    payload=payload,
+                    endpoint_url=endpoint_url,
+                )
+
+        except Exception:
+            # Don't let webhook failures break subscription operations
+            pass

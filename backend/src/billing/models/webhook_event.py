@@ -15,6 +15,10 @@ class WebhookStatus(enum.Enum):
     FAILED = "failed"
 
 
+# Alias for test compatibility
+WebhookEventStatus = WebhookStatus
+
+
 class WebhookEvent(Base):
     """
     Webhook event for customer integrations.

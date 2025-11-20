@@ -165,6 +165,9 @@ class InvoiceService:
         # Auto-attempt payment for the invoice (T076)
         await self._auto_attempt_payment(invoice)
 
+        # Emit webhook event for invoice.created (T120)
+        await self._emit_webhook_event("invoice.created", invoice)
+
         return invoice
 
     async def calculate_proration(
@@ -695,3 +698,48 @@ class InvoiceService:
         await self.db.refresh(invoice)
 
         return invoice
+
+    async def _emit_webhook_event(self, event_type: str, invoice: Invoice) -> None:
+        """
+        Emit webhook event for invoice state changes.
+
+        Args:
+            event_type: Event type (e.g., "invoice.created", "invoice.paid")
+            invoice: Invoice object
+        """
+        try:
+            from billing.services.webhook_service import WebhookService
+            from billing.api.v1.webhook_endpoints import get_endpoints_for_event
+
+            # Get webhook endpoints subscribed to this event
+            endpoints = get_endpoints_for_event(event_type)
+
+            if not endpoints:
+                return  # No subscribers
+
+            webhook_service = WebhookService(self.db)
+
+            # Create webhook payload
+            payload = {
+                "invoice_id": str(invoice.id),
+                "account_id": str(invoice.account_id),
+                "subscription_id": str(invoice.subscription_id) if invoice.subscription_id else None,
+                "number": invoice.number,
+                "status": invoice.status.value,
+                "total": invoice.total,
+                "amount_due": invoice.amount_due,
+                "currency": invoice.currency,
+                "due_date": invoice.due_date.isoformat() if invoice.due_date else None,
+            }
+
+            # Create webhook event for each subscribed endpoint
+            for endpoint_url in endpoints:
+                await webhook_service.create_event(
+                    event_type=event_type,
+                    payload=payload,
+                    endpoint_url=endpoint_url,
+                )
+
+        except Exception:
+            # Don't let webhook failures break invoice operations
+            pass
