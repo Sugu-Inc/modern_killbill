@@ -41,9 +41,80 @@ class PlanBase(BaseModel):
 
 
 class PlanCreate(PlanBase):
-    """Schema for creating a new plan."""
+    """Schema for creating a new plan.
 
-    pass
+    Examples:
+        Monthly flat-rate plan:
+            ```json
+            {
+                "name": "Basic Monthly",
+                "interval": "month",
+                "amount": 2999,
+                "currency": "USD",
+                "trial_days": 14
+            }
+            ```
+
+        Annual plan with discount:
+            ```json
+            {
+                "name": "Pro Annual",
+                "interval": "year",
+                "amount": 29900,
+                "currency": "USD",
+                "trial_days": 30
+            }
+            ```
+
+        Usage-based plan with tiers:
+            ```json
+            {
+                "name": "Pay-as-you-go",
+                "interval": "month",
+                "amount": 0,
+                "currency": "USD",
+                "usage_type": "tiered",
+                "tiers": [
+                    {"up_to": 1000, "unit_amount": 10},
+                    {"up_to": 5000, "unit_amount": 8},
+                    {"up_to": null, "unit_amount": 5}
+                ]
+            }
+            ```
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "Basic Monthly",
+                    "interval": "month",
+                    "amount": 2999,
+                    "currency": "USD",
+                    "trial_days": 14
+                },
+                {
+                    "name": "Pro Annual",
+                    "interval": "year",
+                    "amount": 29900,
+                    "currency": "USD",
+                    "trial_days": 30
+                },
+                {
+                    "name": "Pay-as-you-go",
+                    "interval": "month",
+                    "amount": 0,
+                    "currency": "USD",
+                    "usage_type": "tiered",
+                    "tiers": [
+                        {"up_to": 1000, "unit_amount": 10},
+                        {"up_to": 5000, "unit_amount": 8},
+                        {"up_to": None, "unit_amount": 5}
+                    ]
+                }
+            ]
+        }
+    )
 
 
 class PlanUpdate(BaseModel):

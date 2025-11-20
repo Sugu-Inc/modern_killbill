@@ -22,13 +22,106 @@ class AccountBase(BaseModel):
 
 
 class AccountCreate(AccountBase):
-    """Schema for creating a new account."""
+    """Schema for creating a new account.
 
-    pass
+    Examples:
+        Basic account:
+            ```json
+            {
+                "email": "customer@example.com",
+                "name": "Acme Corporation",
+                "currency": "USD",
+                "timezone": "America/New_York"
+            }
+            ```
+
+        Tax-exempt organization:
+            ```json
+            {
+                "email": "nonprofit@example.org",
+                "name": "Example Non-Profit",
+                "currency": "USD",
+                "timezone": "America/Los_Angeles",
+                "tax_exempt": true,
+                "tax_id": "12-3456789"
+            }
+            ```
+
+        EU business with VAT:
+            ```json
+            {
+                "email": "business@example.eu",
+                "name": "European Business Ltd",
+                "currency": "EUR",
+                "timezone": "Europe/Dublin",
+                "vat_id": "IE1234567X",
+                "extra_metadata": {
+                    "industry": "SaaS",
+                    "company_size": "50-100"
+                }
+            }
+            ```
+    """
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "email": "customer@example.com",
+                    "name": "Acme Corporation",
+                    "currency": "USD",
+                    "timezone": "America/New_York"
+                },
+                {
+                    "email": "nonprofit@example.org",
+                    "name": "Example Non-Profit",
+                    "currency": "USD",
+                    "timezone": "America/Los_Angeles",
+                    "tax_exempt": True,
+                    "tax_id": "12-3456789"
+                },
+                {
+                    "email": "business@example.eu",
+                    "name": "European Business Ltd",
+                    "currency": "EUR",
+                    "timezone": "Europe/Dublin",
+                    "vat_id": "IE1234567X",
+                    "extra_metadata": {
+                        "industry": "SaaS",
+                        "company_size": "50-100"
+                    }
+                }
+            ]
+        }
+    )
 
 
 class AccountUpdate(BaseModel):
-    """Schema for updating an account (all fields optional)."""
+    """Schema for updating an account (all fields optional).
+
+    Examples:
+        Update name only:
+            ```json
+            {
+                "name": "Updated Company Name"
+            }
+            ```
+
+        Mark as tax-exempt:
+            ```json
+            {
+                "tax_exempt": true,
+                "tax_id": "12-3456789"
+            }
+            ```
+
+        Add VAT ID:
+            ```json
+            {
+                "vat_id": "IE1234567X"
+            }
+            ```
+    """
 
     email: EmailStr | None = None
     name: str | None = Field(default=None, min_length=1, max_length=255)
@@ -38,6 +131,16 @@ class AccountUpdate(BaseModel):
     tax_id: str | None = None
     vat_id: str | None = None
     extra_metadata: dict[str, Any] | None = None
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"name": "Updated Company Name"},
+                {"tax_exempt": True, "tax_id": "12-3456789"},
+                {"vat_id": "IE1234567X"}
+            ]
+        }
+    )
 
 
 class Account(AccountBase):

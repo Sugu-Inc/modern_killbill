@@ -494,9 +494,9 @@
 
 ### Documentation
 
-- [ ] T169 [P] Generate OpenAPI documentation at /docs endpoint (FastAPI auto-generates) [FYI]
-- [ ] T170 [P] Add API examples and descriptions to all endpoint docstrings [FYI]
-- [ ] T171 [P] Create CONTRIBUTING.md with development workflow and testing guidelines [FYI]
+- [x] T169 [P] Generate OpenAPI documentation at /docs endpoint (FastAPI auto-generates) [FYI]
+- [x] T170 [P] Add API examples and descriptions to all endpoint docstrings [FYI]
+- [x] T171 [P] Create CONTRIBUTING.md with development workflow and testing guidelines [FYI]
 
 ### Docker & Deployment
 

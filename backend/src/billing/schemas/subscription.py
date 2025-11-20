@@ -16,9 +16,56 @@ class SubscriptionBase(BaseModel):
 
 
 class SubscriptionCreate(SubscriptionBase):
-    """Schema for creating a new subscription."""
+    """Schema for creating a new subscription.
+
+    Examples:
+        Basic subscription:
+            ```json
+            {
+                "account_id": "550e8400-e29b-41d4-a716-446655440000",
+                "plan_id": "660e8400-e29b-41d4-a716-446655440001",
+                "quantity": 1
+            }
+            ```
+
+        Multi-seat subscription:
+            ```json
+            {
+                "account_id": "550e8400-e29b-41d4-a716-446655440000",
+                "plan_id": "660e8400-e29b-41d4-a716-446655440001",
+                "quantity": 10
+            }
+            ```
+
+        Subscription with custom trial end:
+            ```json
+            {
+                "account_id": "550e8400-e29b-41d4-a716-446655440000",
+                "plan_id": "660e8400-e29b-41d4-a716-446655440001",
+                "quantity": 1,
+                "trial_end": "2024-12-31T23:59:59Z"
+            }
+            ```
+    """
 
     trial_end: datetime | None = Field(default=None, description="Trial end date (overrides plan trial_days)")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "account_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "plan_id": "660e8400-e29b-41d4-a716-446655440001",
+                    "quantity": 1
+                },
+                {
+                    "account_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "plan_id": "660e8400-e29b-41d4-a716-446655440001",
+                    "quantity": 10
+                }
+            ]
+        }
+    )
 
 
 class SubscriptionUpdate(BaseModel):
