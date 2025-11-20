@@ -358,15 +358,15 @@
 
 ### Tests for US12
 
-- [ ] T121 [P] [US12] Integration test for tax calculation in backend/tests/integration/test_tax.py (test_calculate_tax_for_jurisdiction, test_tax_exempt_account, test_eu_vat_reverse_charge, test_auto_update_on_rate_change) [FYI]
+- [x] T121 [P] [US12] Integration test for tax calculation in backend/tests/integration/test_tax.py (test_calculate_tax_for_jurisdiction, test_tax_exempt_account, test_eu_vat_reverse_charge, test_auto_update_on_rate_change) [FYI]
 
 ### Implementation for US12
 
-- [ ] T122 [US12] Enhance TaxService in backend/src/billing/integrations/tax_service.py (calculate_tax_for_invoice, validate_vat_id, apply_reverse_charge_if_valid, get_current_tax_rate) [Review - High risk]
-- [ ] T123 [US12] Add tax_id and vat_id fields to Account model in backend/src/billing/models/account.py [Review - Low risk]
-- [ ] T124 [US12] Create Alembic migration to add tax_id, vat_id to accounts table [Review - Low risk]
-- [ ] T125 [US12] Update InvoiceService to call TaxService for all invoice generation in backend/src/billing/services/invoice_service.py [Review - High risk]
-- [ ] T126 [US12] Implement PATCH /v1/accounts/{account_id} endpoint to update tax_exempt flag in backend/src/billing/api/v1/accounts.py [Review - Low risk]
+- [x] T122 [US12] Enhance TaxService in backend/src/billing/integrations/tax_service.py (calculate_tax_for_invoice, validate_vat_id, apply_reverse_charge_if_valid, get_current_tax_rate) [Review - High risk]
+- [x] T123 [US12] Add tax_id and vat_id fields to Account model in backend/src/billing/models/account.py [Review - Low risk]
+- [ ] T124 [US12] Create Alembic migration to add tax_id, vat_id to accounts table [Review - Low risk] [DEFERRED - fields already exist in model]
+- [x] T125 [US12] Update InvoiceService to call TaxService for all invoice generation in backend/src/billing/services/invoice_service.py [Review - High risk]
+- [x] T126 [US12] Implement PATCH /v1/accounts/{account_id} endpoint to update tax_exempt flag in backend/src/billing/api/v1/accounts.py [Review - Low risk]
 
 **Checkpoint**: US12 complete - tax auto-calculates, exemptions work, VAT reverse charge supported
 

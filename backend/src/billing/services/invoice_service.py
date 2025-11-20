@@ -531,9 +531,10 @@ class InvoiceService:
 
     async def _calculate_tax(self, account: Account, amount: int) -> int:
         """
-        Calculate tax for an invoice.
+        Calculate tax for an invoice using TaxService.
 
-        This is a placeholder that will be enhanced with external tax service in T059.
+        Integrates with Stripe Tax API for accurate tax calculation based on
+        customer location, with support for tax exemptions and EU VAT reverse charge.
 
         Args:
             account: Account to calculate tax for
@@ -542,14 +543,20 @@ class InvoiceService:
         Returns:
             Tax amount in cents
         """
-        # Skip tax for tax-exempt accounts
-        if account.tax_exempt:
-            return 0
+        from billing.integrations.tax_service import TaxService
 
-        # Placeholder: Apply simple 10% tax rate
-        # TODO (T059): Integrate with Stripe Tax API or Avalara
-        tax_rate = Decimal("0.10")
-        tax_amount = int(Decimal(str(amount)) * tax_rate)
+        # Initialize tax service
+        tax_service = TaxService()
+
+        # Calculate tax using TaxService (handles exemptions, VAT, etc.)
+        tax_result = await tax_service.calculate_tax_for_invoice(
+            account=account,
+            amount=amount,
+            currency=account.currency,
+        )
+
+        # Extract tax amount from result
+        tax_amount = tax_result.get("amount", 0)
 
         return tax_amount
 
