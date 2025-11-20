@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid {{ brand_primary_color }};
+        }
+
+        .logo {
+            max-width: 200px;
+            max-height: 80px;
+        }
+
+        .company-info {
+            text-align: right;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: {{ brand_primary_color }};
+            margin-bottom: 5px;
+        }
+
+        .invoice-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: {{ brand_primary_color }};
+            margin-bottom: 10px;
+        }
+
+        .invoice-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .meta-section {
+            flex: 1;
+        }
+
+        .meta-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .meta-value {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .billing-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .billing-label {
+            font-weight: bold;
+            color: {{ brand_primary_color }};
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .billing-details {
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        thead {
+            background-color: {{ brand_primary_color }};
+            color: {{ brand_secondary_color }};
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        th.amount {
+            text-align: right;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        td.amount {
+            text-align: right;
+            font-weight: 500;
+        }
+
+        .line-item-description {
+            color: #666;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .totals {
+            margin-left: auto;
+            width: 300px;
+        }
+
+        .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .totals-row.subtotal {
+            font-size: 14px;
+        }
+
+        .totals-row.tax {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .totals-row.total {
+            font-size: 20px;
+            font-weight: bold;
+            border-top: 2px solid {{ brand_primary_color }};
+            border-bottom: 3px double {{ brand_primary_color }};
+            color: {{ brand_primary_color }};
+            margin-top: 10px;
+            padding-top: 15px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-draft {
+            background-color: #f0f0f0;
+            color: #666;
+        }
+
+        .status-open {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-void {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .payment-info {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .amount-due-box {
+            background-color: #fff3e0;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 2px solid {{ brand_primary_color }};
+        }
+
+        .amount-due-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .amount-due-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: {{ brand_primary_color }};
+        }
+    </style>
+</head>
+<body>
+    <!-- Header with Logo and Company Info -->
+    <div class="header">
+        <div>
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="{{ company_name }}" class="logo">
+            {% else %}
+            <div class="company-name">{{ company_name }}</div>
+            {% endif %}
+        </div>
+        <div class="company-info">
+            <div class="invoice-title">INVOICE</div>
+            <div><strong>{{ invoice.number }}</strong></div>
+        </div>
+    </div>
+
+    <!-- Invoice Metadata -->
+    <div class="invoice-meta">
+        <div class="meta-section">
+            <div class="meta-label">Invoice Date</div>
+            <div class="meta-value">{{ invoice.created_at.strftime('%B %d, %Y') }}</div>
+
+            <div class="meta-label">Due Date</div>
+            <div class="meta-value">
+                {% if invoice.due_date %}
+                {{ invoice.due_date.strftime('%B %d, %Y') }}
+                {% else %}
+                Upon Receipt
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="meta-section">
+            <div class="meta-label">Status</div>
+            <div class="meta-value">
+                <span class="status-badge status-{{ invoice.status.value }}">
+                    {{ invoice.status.value }}
+                </span>
+            </div>
+
+            <div class="meta-label">Currency</div>
+            <div class="meta-value">{{ invoice.currency }}</div>
+        </div>
+    </div>
+
+    <!-- Bill To Section -->
+    <div class="billing-info">
+        <div class="billing-label">BILL TO</div>
+        <div class="billing-details">
+            <strong>{{ account.name }}</strong><br>
+            {{ account.email }}
+            {% if account.tax_id %}
+            <br>Tax ID: {{ account.tax_id }}
+            {% endif %}
+            {% if account.vat_id %}
+            <br>VAT ID: {{ account.vat_id }}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Amount Due Highlight (for open invoices) -->
+    {% if invoice.status.value == 'open' and invoice.amount_due > 0 %}
+    <div class="amount-due-box">
+        <div class="amount-due-label">AMOUNT DUE</div>
+        <div class="amount-due-value">{{ format_currency(invoice.amount_due, invoice.currency) }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Payment Confirmation (for paid invoices) -->
+    {% if invoice.status.value == 'paid' %}
+    <div class="payment-info">
+        <strong>✓ Paid</strong> - Thank you for your payment!
+        {% if invoice.paid_at %}
+        <br>Payment received on {{ invoice.paid_at.strftime('%B %d, %Y') }}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Line Items Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="width: 100px;">Quantity</th>
+                <th class="amount" style="width: 120px;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.line_items %}
+            <tr>
+                <td>
+                    <strong>{{ item.description }}</strong>
+                    {% if item.period_start and item.period_end %}
+                    <div class="line-item-description">
+                        Service period: {{ item.period_start.strftime('%b %d, %Y') }} - {{ item.period_end.strftime('%b %d, %Y') }}
+                    </div>
+                    {% endif %}
+                </td>
+                <td>{{ item.quantity }}</td>
+                <td class="amount">{{ format_currency(item.amount, invoice.currency) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals Section -->
+    <div class="totals">
+        <div class="totals-row subtotal">
+            <span>Subtotal</span>
+            <span>{{ format_currency(invoice.subtotal, invoice.currency) }}</span>
+        </div>
+
+        {% if invoice.tax > 0 %}
+        <div class="totals-row tax">
+            <span>Tax</span>
+            <span>{{ format_currency(invoice.tax, invoice.currency) }}</span>
+        </div>
+        {% endif %}
+
+        {% if invoice.credits_applied > 0 %}
+        <div class="totals-row tax">
+            <span>Credits Applied</span>
+            <span>-{{ format_currency(invoice.credits_applied, invoice.currency) }}</span>
+        </div>
+        {% endif %}
+
+        <div class="totals-row total">
+            <span>Total</span>
+            <span>{{ format_currency(invoice.total, invoice.currency) }}</span>
+        </div>
+
+        {% if invoice.amount_due != invoice.total %}
+        <div class="totals-row">
+            <span><strong>Amount Due</strong></span>
+            <span><strong>{{ format_currency(invoice.amount_due, invoice.currency) }}</strong></span>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>
+            Thank you for your business!
+        </p>
+        <p>
+            {{ company_name }} | Questions? Contact us at support@{{ company_name.lower().replace(' ', '') }}.com
+        </p>
+        {% if custom_footer %}
+        <p>{{ custom_footer }}</p>
+        {% endif %}
+    </div>
+</body>
+</html>

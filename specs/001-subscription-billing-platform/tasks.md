@@ -378,12 +378,16 @@
 
 **Independent Test**: Generate invoice, verify document includes logo and brand colors
 
+### Tests for US13
+
+- [x] Integration tests for PDF generation in backend/tests/integration/test_invoice_pdf.py (test_generate_invoice_pdf, test_pdf_includes_invoice_details, test_pdf_with_branding, test_pdf_multi_currency_formatting, test_pdf_with_tax_breakdown, test_pdf_with_line_items, test_pdf_generation_error_handling) [Created]
+
 ### Implementation for US13
 
-- [ ] T127 [US13] Implement invoice PDF generator in backend/src/billing/services/invoice_pdf_service.py using WeasyPrint or ReportLab (render HTML to PDF with branding) [FYI]
-- [ ] T128 [US13] Create invoice HTML template in backend/src/billing/templates/invoice.html with Jinja2 (support logo, brand colors, custom footer, currency formatting) [FYI]
-- [ ] T129 [US13] Implement GET /v1/invoices/{invoice_id}/pdf endpoint in backend/src/billing/api/v1/invoices.py (return PDF document) [FYI]
-- [ ] T130 [US13] Add branding settings to config in backend/src/billing/config.py (COMPANY_NAME, LOGO_URL, BRAND_PRIMARY_COLOR, BRAND_SECONDARY_COLOR) [FYI]
+- [x] T127 [US13] Implement invoice PDF generator in backend/src/billing/services/invoice_pdf_service.py using WeasyPrint or ReportLab (render HTML to PDF with branding) [FYI]
+- [x] T128 [US13] Create invoice HTML template in backend/src/billing/templates/invoice.html with Jinja2 (support logo, brand colors, custom footer, currency formatting) [FYI]
+- [x] T129 [US13] Implement GET /v1/invoices/{invoice_id}/pdf endpoint in backend/src/billing/api/v1/invoices.py (return PDF document) [FYI]
+- [x] T130 [US13] Add branding settings to config in backend/src/billing/config.py (COMPANY_NAME, LOGO_URL, BRAND_PRIMARY_COLOR, BRAND_SECONDARY_COLOR) [FYI]
 
 **Checkpoint**: US13 complete - invoices can be rendered as branded PDFs
 

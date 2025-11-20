@@ -2,12 +2,15 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from billing.api.deps import get_db
 from billing.models.invoice import InvoiceStatus
 from billing.schemas.invoice import Invoice, InvoiceList, InvoiceVoid
 from billing.services.invoice_service import InvoiceService
+from billing.services.invoice_pdf_service import InvoicePDFService
+from billing.services.account_service import AccountService
 
 router = APIRouter(prefix="/invoices", tags=["Invoices"])
 
@@ -131,3 +134,75 @@ async def void_invoice(
             status_code = status.HTTP_400_BAD_REQUEST
 
         raise HTTPException(status_code=status_code, detail=error_msg) from e
+
+
+@router.get("/{invoice_id}/pdf")
+async def get_invoice_pdf(
+    invoice_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """
+    Generate and download invoice as PDF.
+
+    Returns a professionally-formatted PDF invoice with:
+    - Company branding (logo, colors)
+    - Invoice details (number, date, due date, status)
+    - Customer billing information
+    - Detailed line items breakdown
+    - Tax calculation (if applicable)
+    - Payment status and amount due
+
+    The PDF is generated dynamically using the configured branding settings.
+
+    **Response**:
+    - Content-Type: application/pdf
+    - Content-Disposition: attachment with invoice filename
+
+    **Use Cases**:
+    - Customer wants to download invoice for records
+    - Accounting systems need PDF copies
+    - Email invoice PDF to customer
+    - Print invoice for physical mailing
+    """
+    # Get invoice
+    invoice_service = InvoiceService(db)
+    invoice = await invoice_service.get_invoice(invoice_id)
+
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Invoice {invoice_id} not found",
+        )
+
+    # Get account for billing information
+    account_service = AccountService(db)
+    account = await account_service.get_account(invoice.account_id)
+
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account {invoice.account_id} not found",
+        )
+
+    try:
+        # Generate PDF
+        pdf_service = InvoicePDFService()
+        pdf_bytes = await pdf_service.generate_pdf(invoice, account)
+
+        # Return PDF as downloadable file
+        filename = f"invoice-{invoice.number}.pdf"
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(len(pdf_bytes)),
+            },
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate PDF: {str(e)}",
+        ) from e
