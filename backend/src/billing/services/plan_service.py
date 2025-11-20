@@ -24,7 +24,19 @@ class PlanService:
 
         Returns:
             Created plan
+
+        Raises:
+            ValueError: If currency is not supported
         """
+        # Validate currency
+        from billing.utils.currency import validate_currency
+
+        if not validate_currency(plan_data.currency):
+            raise ValueError(
+                f"Currency {plan_data.currency} is not supported. "
+                f"Please use one of the supported currencies."
+            )
+
         # Convert usage tiers to dict format for JSONB
         tiers_dict = None
         if plan_data.tiers:

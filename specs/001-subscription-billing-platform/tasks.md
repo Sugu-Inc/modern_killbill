@@ -312,15 +312,15 @@
 
 ### Tests for US10
 
-- [ ] T107 [P] [US10] Integration test for multi-currency in backend/tests/integration/test_multi_currency.py (test_create_eur_account, test_invoice_in_eur, test_payment_in_eur, test_currency_formatting) [FYI]
+- [x] T107 [P] [US10] Integration test for multi-currency in backend/tests/integration/test_multi_currency.py (test_create_eur_account, test_invoice_in_eur, test_payment_in_eur, test_currency_formatting) [FYI]
 
 ### Implementation for US10
 
-- [ ] T108 [US10] Implement currency validation and formatting utilities in backend/src/billing/utils/currency.py (validate_currency, format_amount_for_currency, supported_currencies list) [Review - Low risk]
-- [ ] T109 [US10] Add multi-currency support to Plan model (allow multiple currency prices per plan in backend/src/billing/models/plan.py) [Review - High risk]
-- [ ] T110 [US10] Update PlanService to handle currency-specific pricing in backend/src/billing/services/plan_service.py [Review - High risk]
-- [ ] T111 [US10] Update invoice and payment formatting to use currency utils in backend/src/billing/services/invoice_service.py and payment_service.py [Review - Low risk]
-- [ ] T112 [US10] Configure Stripe integration for multi-currency in backend/src/billing/integrations/stripe.py (set currency when creating charges) [Review - High risk]
+- [x] T108 [US10] Implement currency validation and formatting utilities in backend/src/billing/utils/currency.py (validate_currency, format_amount_for_currency, supported_currencies list) [Review - Low risk]
+- [x] T109 [US10] Add multi-currency support to Plan model (allow multiple currency prices per plan in backend/src/billing/models/plan.py) [Review - High risk]
+- [x] T110 [US10] Update PlanService to handle currency-specific pricing in backend/src/billing/services/plan_service.py [Review - High risk]
+- [x] T111 [US10] Update invoice and payment formatting to use currency utils in backend/src/billing/services/invoice_service.py and payment_service.py [Review - Low risk]
+- [x] T112 [US10] Configure Stripe integration for multi-currency in backend/src/billing/integrations/stripe.py (set currency when creating charges) [Review - High risk]
 
 **Checkpoint**: US10 complete - multi-currency billing works with 20+ currencies
 

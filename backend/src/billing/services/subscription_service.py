@@ -62,6 +62,13 @@ class SubscriptionService:
         if not plan.active:
             raise ValueError(f"Plan {subscription_data.plan_id} is inactive")
 
+        # Validate currency match between account and plan
+        if plan.currency != account.currency:
+            raise ValueError(
+                f"Currency mismatch: Plan is in {plan.currency} but account is in {account.currency}. "
+                f"Please use a plan in {account.currency} or contact support for currency conversion."
+            )
+
         # Calculate period dates
         now = datetime.utcnow()
         if plan.interval.value == "month":

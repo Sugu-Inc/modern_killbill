@@ -26,8 +26,17 @@ class AccountService:
             Created account
 
         Raises:
-            ValueError: If email already exists
+            ValueError: If email already exists or currency is not supported
         """
+        # Validate currency
+        from billing.utils.currency import validate_currency
+
+        if not validate_currency(account_data.currency):
+            raise ValueError(
+                f"Currency {account_data.currency} is not supported. "
+                f"Please use one of the supported currencies."
+            )
+
         # Check if email already exists
         existing = await self.get_account_by_email(account_data.email)
         if existing:
