@@ -508,9 +508,10 @@
 
 ### Final Integration Tests
 
-- [ ] T177 End-to-end test: Create account → Create plan → Create subscription → Generate invoice → Process payment → Verify invoice PAID [FYI]
-- [ ] T178 End-to-end test: Create subscription → Upgrade mid-cycle → Verify prorated invoice → Process payment [FYI]
-- [ ] T179 End-to-end test: Create usage-based subscription → Submit usage → Generate invoice → Verify usage charges on invoice [FYI]
+- [x] T177 End-to-end test: Create account → Create plan → Create subscription → Generate invoice → Process payment → Verify invoice PAID [FYI]
+- [x] T178 End-to-end test: Create subscription → Upgrade mid-cycle → Verify prorated invoice → Process payment [FYI]
+- [x] T179 End-to-end test: Create usage-based subscription → Submit usage → Generate invoice → Verify usage charges on invoice [FYI]
+- [x] Additional E2E tests: Subscription lifecycle, multi-subscription accounts (test_e2e_workflows.py)
 - [ ] T180 Load test: Verify 100 invoices/sec generation rate using Locust or k6 [FYI]
 
 **Checkpoint**: Platform production-ready with 99.9% uptime capability
