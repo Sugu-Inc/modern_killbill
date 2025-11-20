@@ -488,9 +488,9 @@
 
 ### Error Handling & Validation
 
-- [ ] T166 [P] Implement global exception handlers in backend/src/billing/main.py (ValidationError, SQLAlchemyError, StripeError, generic Exception) [Review - Low risk]
-- [ ] T167 [P] Add input validation to all Pydantic schemas (email format, UUID format, positive amounts, valid currencies) [Review - Low risk]
-- [ ] T168 [P] Implement structured error responses with error codes and remediation hints in backend/src/billing/schemas/error.py [Review - Low risk]
+- [x] T166 [P] Implement global exception handlers in backend/src/billing/main.py (ValidationError, SQLAlchemyError, StripeError, generic Exception) [Review - Low risk]
+- [x] T167 [P] Add input validation to all Pydantic schemas (email format, UUID format, positive amounts, valid currencies) [Review - Low risk]
+- [x] T168 [P] Implement structured error responses with error codes and remediation hints in backend/src/billing/schemas/error.py [Review - Low risk]
 
 ### Documentation
 

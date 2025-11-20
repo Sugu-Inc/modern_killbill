@@ -58,82 +58,207 @@ metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
 
-# Exception handlers
+# Exception handlers with structured error responses
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """Handle Pydantic validation errors with structured response."""
+    """
+    Handle Pydantic validation errors with structured response.
+
+    Returns 422 with detailed field-level validation errors.
+    """
+    from billing.schemas.error import ErrorDetail, ErrorCode, REMEDIATION_HINTS
+    from datetime import datetime
+    import uuid
+
+    # Extract request ID from headers or generate one
+    request_id = request.headers.get("x-request-id", f"req_{uuid.uuid4().hex[:12]}")
+
+    # Convert Pydantic errors to structured format
+    details = []
+    for error in exc.errors():
+        field_path = ".".join(str(loc) for loc in error["loc"])
+        error_type = error["type"]
+
+        # Map Pydantic error types to our error codes
+        code_mapping = {
+            "value_error.email": ErrorCode.INVALID_EMAIL,
+            "value_error.uuid": ErrorCode.INVALID_UUID,
+            "type_error.enum": ErrorCode.INVALID_ENUM_VALUE,
+            "value_error.missing": ErrorCode.MISSING_REQUIRED_FIELD,
+            "type_error.integer": ErrorCode.INVALID_AMOUNT,
+        }
+
+        code = code_mapping.get(error_type, "validation_error")
+
+        details.append(
+            ErrorDetail(
+                code=code,
+                message=error["msg"],
+                field=field_path,
+                value=error.get("input"),
+            ).model_dump()
+        )
+
     logger.warning(
         "validation_error",
         path=request.url.path,
         method=request.method,
-        errors=exc.errors(),
+        request_id=request_id,
+        error_count=len(details),
     )
+
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
-            "error": "validation_error",
+            "error": "ValidationError",
             "message": "Request validation failed",
-            "details": exc.errors(),
-            "remediation": "Check the API documentation for correct request format",
+            "details": details,
+            "remediation": "Check the API documentation for correct request format at /docs",
+            "request_id": request_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "documentation_url": f"{request.base_url}docs",
         },
     )
 
 
 @app.exception_handler(SQLAlchemyError)
 async def database_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
-    """Handle database errors."""
+    """
+    Handle database errors.
+
+    Returns 503 Service Unavailable for database connection issues.
+    """
+    from billing.schemas.error import ErrorCode, REMEDIATION_HINTS
+    from datetime import datetime
+    import uuid
+
+    request_id = request.headers.get("x-request-id", f"req_{uuid.uuid4().hex[:12]}")
+
     logger.error(
         "database_error",
         path=request.url.path,
         method=request.method,
-        error=str(exc),
+        request_id=request_id,
+        error_type=type(exc).__name__,
+        error_message=str(exc),
     )
+
+    # Don't expose internal database details in production
+    error_message = "Database temporarily unavailable" if settings.app_env == "production" else str(exc)
+
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={
-            "error": "database_error",
+            "error": "DatabaseError",
             "message": "A database error occurred",
-            "remediation": "Please try again later. Contact support if the problem persists",
+            "details": [
+                {
+                    "code": ErrorCode.DATABASE_ERROR,
+                    "message": error_message,
+                }
+            ],
+            "remediation": REMEDIATION_HINTS.get(ErrorCode.DATABASE_ERROR),
+            "request_id": request_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         },
+        headers={"Retry-After": "30"},  # Suggest retry after 30 seconds
     )
 
 
 @app.exception_handler(StripeError)
 async def stripe_exception_handler(request: Request, exc: StripeError) -> JSONResponse:
-    """Handle Stripe API errors."""
+    """
+    Handle Stripe API errors.
+
+    Returns 502 Bad Gateway for payment gateway errors.
+    """
+    from billing.schemas.error import ErrorCode, REMEDIATION_HINTS
+    from datetime import datetime
+    import uuid
+
+    request_id = request.headers.get("x-request-id", f"req_{uuid.uuid4().hex[:12]}")
+
+    stripe_code = getattr(exc, "code", None)
+    stripe_message = str(exc)
+
     logger.error(
         "stripe_error",
         path=request.url.path,
         method=request.method,
-        error=str(exc),
-        stripe_code=getattr(exc, "code", None),
+        request_id=request_id,
+        stripe_code=stripe_code,
+        stripe_message=stripe_message,
     )
+
+    # Map Stripe error codes to user-friendly messages
+    user_message = {
+        "card_declined": "Payment method declined. Please try a different payment method.",
+        "expired_card": "Payment method has expired. Please use a different payment method.",
+        "incorrect_cvc": "Card security code is incorrect. Please check and try again.",
+        "processing_error": "Payment processing error. Please try again.",
+        "rate_limit": "Too many payment attempts. Please try again later.",
+    }.get(stripe_code, "Payment gateway error occurred")
+
     return JSONResponse(
         status_code=status.HTTP_502_BAD_GATEWAY,
         content={
-            "error": "payment_gateway_error",
-            "message": "Payment gateway error occurred",
-            "details": str(exc),
-            "remediation": "Please try again. Contact support if the problem persists",
+            "error": "PaymentGatewayError",
+            "message": user_message,
+            "details": [
+                {
+                    "code": ErrorCode.STRIPE_API_ERROR,
+                    "message": stripe_message if settings.app_env != "production" else user_message,
+                }
+            ],
+            "remediation": REMEDIATION_HINTS.get(ErrorCode.STRIPE_API_ERROR),
+            "request_id": request_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         },
     )
 
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Handle all other uncaught exceptions."""
+    """
+    Handle all other uncaught exceptions.
+
+    Returns 500 Internal Server Error for unexpected exceptions.
+    Logs full stack trace for debugging but returns safe error message to client.
+    """
+    from billing.schemas.error import ErrorCode
+    from datetime import datetime
+    import uuid
+    import traceback
+
+    request_id = request.headers.get("x-request-id", f"req_{uuid.uuid4().hex[:12]}")
+
+    # Log full exception with stack trace
     logger.exception(
         "unhandled_exception",
         path=request.url.path,
         method=request.method,
-        exc_info=exc,
+        request_id=request_id,
+        exception_type=type(exc).__name__,
+        exception_message=str(exc),
+        stack_trace=traceback.format_exc(),
     )
+
+    # Return safe error message (don't expose internal details)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
-            "error": "internal_server_error",
+            "error": "InternalServerError",
             "message": "An unexpected error occurred",
-            "remediation": "Please contact support with the request details",
+            "details": [
+                {
+                    "code": ErrorCode.INTERNAL_ERROR,
+                    "message": str(exc) if settings.debug else "Internal server error",
+                }
+            ],
+            "remediation": "Please contact support with the request ID",
+            "request_id": request_id,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "documentation_url": f"{request.base_url}docs",
         },
     )
 
