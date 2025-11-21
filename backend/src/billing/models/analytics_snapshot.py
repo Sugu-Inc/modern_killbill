@@ -53,7 +53,7 @@ class AnalyticsSnapshot(Base):
     )
 
     # Additional metric metadata
-    metadata = Column(
+    metric_metadata = Column(
         JSONB,
         nullable=True,
         comment="Additional metric details (breakdown by plan, segment, etc.)"

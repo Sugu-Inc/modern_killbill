@@ -467,7 +467,7 @@ class AnalyticsService:
         if existing_snapshot:
             # Update existing snapshot
             existing_snapshot.value = value
-            existing_snapshot.metadata = metadata
+            existing_snapshot.metric_metadata = metadata
             existing_snapshot.created_at = datetime.utcnow()
             await self.db.commit()
             await self.db.refresh(existing_snapshot)
@@ -486,7 +486,7 @@ class AnalyticsService:
                 metric_name=metric_name,
                 value=value,
                 period=period,
-                metadata=metadata
+                metric_metadata=metadata
             )
 
             self.db.add(snapshot)

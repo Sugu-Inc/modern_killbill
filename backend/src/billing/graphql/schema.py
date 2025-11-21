@@ -24,6 +24,7 @@ import strawberry
 from typing import Optional, List
 from datetime import datetime, date
 from decimal import Decimal
+from enum import Enum
 
 # Scalars for custom types
 
@@ -57,7 +58,7 @@ class DateScalar:
 # Enums
 
 @strawberry.enum
-class SubscriptionStatusEnum(str):
+class SubscriptionStatusEnum(Enum):
     """Subscription status."""
     TRIAL = "trial"
     ACTIVE = "active"
@@ -67,7 +68,7 @@ class SubscriptionStatusEnum(str):
 
 
 @strawberry.enum
-class InvoiceStatusEnum(str):
+class InvoiceStatusEnum(Enum):
     """Invoice status."""
     DRAFT = "draft"
     OPEN = "open"
@@ -77,7 +78,7 @@ class InvoiceStatusEnum(str):
 
 
 @strawberry.enum
-class PaymentStatusEnum(str):
+class PaymentStatusEnum(Enum):
     """Payment status."""
     PENDING = "pending"
     SUCCEEDED = "succeeded"
@@ -300,13 +301,6 @@ class Query:
 
 # Root Mutation (placeholder for future)
 
-@strawberry.type
-class Mutation:
-    """Root GraphQL mutation."""
-    # Mutations would be added here (create, update, delete operations)
-    pass
+# Schema (Query only - mutations handled via REST API)
 
-
-# Schema
-
-schema = strawberry.Schema(query=Query, mutation=Mutation)
+schema = strawberry.Schema(query=Query)
