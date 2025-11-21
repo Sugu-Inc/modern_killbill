@@ -461,9 +461,9 @@
 
 ### Authentication & Authorization (RBAC - 4 roles per spec)
 
-- [ ] T151 [P] Implement JWT authentication with RS256 signing in backend/src/billing/auth/jwt.py (create_access_token, verify_token) [Review - High risk]
-- [ ] T152 [P] Implement RBAC decorator in backend/src/billing/auth/rbac.py with roles: Super Admin, Billing Admin, Support Rep, Finance Viewer [Review - High risk]
-- [ ] T153 Integrate auth into get_current_user() dependency in backend/src/billing/api/deps.py [Review - High risk]
+- [x] T151 [P] Implement JWT authentication with RS256 signing in backend/src/billing/auth/jwt.py (create_access_token, verify_token) [Review - High risk]
+- [x] T152 [P] Implement RBAC decorator in backend/src/billing/auth/rbac.py with roles: Super Admin, Billing Admin, Support Rep, Finance Viewer [Review - High risk]
+- [x] T153 Integrate auth into get_current_user() dependency in backend/src/billing/api/deps.py [Review - High risk]
 - [ ] T154 [P] Add role-based access control to all API endpoints (apply RBAC decorator) [Review - High risk]
 
 ### Audit Logging (FR-143)
