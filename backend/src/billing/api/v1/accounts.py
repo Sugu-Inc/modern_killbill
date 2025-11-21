@@ -19,6 +19,7 @@ from billing.schemas.credit import Credit, CreditList, CreditBalance
 from billing.services.account_service import AccountService
 from billing.services.payment_method_service import PaymentMethodService
 from billing.services.credit_service import CreditService
+from billing.cache import cache, cache_key
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -43,6 +44,10 @@ async def create_account(
     try:
         account = await service.create_account(account_data, current_user=current_user)
         await db.commit()
+
+        # Invalidate account list cache
+        await cache.invalidate_pattern("account_list:*")
+
         return account
     except ValueError as e:
         await db.rollback()
@@ -59,6 +64,12 @@ async def get_account(
 
     Returns account details including status, currency, and metadata.
     """
+    # Check cache first
+    cache_key_str = cache_key("account", str(account_id))
+    cached = await cache.get(cache_key_str)
+    if cached:
+        return Account.model_validate(cached)
+
     service = AccountService(db)
     account = await service.get_account(account_id)
 
@@ -67,6 +78,9 @@ async def get_account(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Account {account_id} not found",
         )
+
+    # Cache for 5 minutes
+    await cache.set(cache_key_str, account.model_dump(), ttl=300)
 
     return account
 
@@ -93,15 +107,26 @@ async def list_accounts(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 1000"
         )
 
+    # Check cache first
+    cache_key_str = cache_key("account_list", f"page{page}_size{page_size}_status{status_filter}")
+    cached = await cache.get(cache_key_str)
+    if cached:
+        return AccountList.model_validate(cached)
+
     service = AccountService(db)
     accounts, total = await service.list_accounts(page, page_size, status_filter)
 
-    return AccountList(
+    result = AccountList(
         items=accounts,
         total=total,
         page=page,
         page_size=page_size,
     )
+
+    # Cache for 1 minute (lists change more frequently)
+    await cache.set(cache_key_str, result.model_dump(), ttl=60)
+
+    return result
 
 
 @router.patch("/{account_id}", response_model=Account)
@@ -120,6 +145,11 @@ async def update_account(
     try:
         account = await service.update_account(account_id, update_data, current_user=current_user)
         await db.commit()
+
+        # Invalidate cache for this account and account lists
+        await cache.invalidate_pattern(f"account:{account_id}*")
+        await cache.invalidate_pattern("account_list:*")
+
         return account
     except ValueError as e:
         await db.rollback()
@@ -143,6 +173,10 @@ async def delete_account(
     try:
         await service.delete_account(account_id, current_user=current_user)
         await db.commit()
+
+        # Invalidate cache for this account and account lists
+        await cache.invalidate_pattern(f"account:{account_id}*")
+        await cache.invalidate_pattern("account_list:*")
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

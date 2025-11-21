@@ -477,7 +477,7 @@
 
 - [x] T159 [P] Implement Redis caching layer in backend/src/billing/cache.py (cache_get, cache_set, cache_invalidate) [Review - Low risk]
 - [x] T160 [P] Implement rate limiting middleware using Redis in backend/src/billing/middleware/rate_limit.py (1000 req/hour per API key) [Review - Low risk]
-- [ ] T161 Add caching to frequently accessed endpoints (GET plans, GET accounts) [Review - Low risk]
+- [x] T161 Add caching to frequently accessed endpoints (GET plans, GET accounts) [Review - Low risk]
 - [ ] T162 Add database query optimization: ensure all foreign keys indexed, add composite indexes for common filters [Review - Low risk]
 
 ### Data Retention & Cleanup (FR-142 to FR-144)

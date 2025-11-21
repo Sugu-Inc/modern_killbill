@@ -8,6 +8,7 @@ from billing.api.deps import get_db, get_current_user
 from billing.auth.rbac import require_roles, Role
 from billing.schemas.plan import Plan, PlanCreate, PlanUpdate, PlanList
 from billing.services.plan_service import PlanService
+from billing.cache import cache, cache_key
 
 router = APIRouter(prefix="/plans", tags=["Plans"])
 
@@ -38,6 +39,10 @@ async def create_plan(
     try:
         plan = await service.create_plan(plan_data)
         await db.commit()
+
+        # Invalidate plan list cache
+        await cache.invalidate_pattern("plan_list:*")
+
         return plan
     except ValueError as e:
         await db.rollback()
@@ -54,6 +59,12 @@ async def get_plan(
 
     Returns plan details including pricing, interval, and usage configuration.
     """
+    # Check cache first
+    cache_key_str = cache_key("plan", str(plan_id))
+    cached = await cache.get(cache_key_str)
+    if cached:
+        return Plan.model_validate(cached)
+
     service = PlanService(db)
     plan = await service.get_plan(plan_id)
 
@@ -62,6 +73,9 @@ async def get_plan(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Plan {plan_id} not found",
         )
+
+    # Cache for 5 minutes
+    await cache.set(cache_key_str, plan.model_dump(), ttl=300)
 
     return plan
 
@@ -90,15 +104,26 @@ async def list_plans(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 1000"
         )
 
+    # Check cache first
+    cache_key_str = cache_key("plan_list", f"page{page}_size{page_size}_active{active_only}")
+    cached = await cache.get(cache_key_str)
+    if cached:
+        return PlanList.model_validate(cached)
+
     service = PlanService(db)
     plans, total = await service.list_plans(page, page_size, active_only)
 
-    return PlanList(
+    result = PlanList(
         items=plans,
         total=total,
         page=page,
         page_size=page_size,
     )
+
+    # Cache for 1 minute (lists change more frequently)
+    await cache.set(cache_key_str, result.model_dump(), ttl=60)
+
+    return result
 
 
 @router.patch("/{plan_id}", response_model=Plan)
@@ -122,6 +147,11 @@ async def update_plan(
     try:
         plan = await service.update_plan(plan_id, update_data)
         await db.commit()
+
+        # Invalidate cache for this plan and plan lists
+        await cache.invalidate_pattern(f"plan:{plan_id}*")
+        await cache.invalidate_pattern("plan_list:*")
+
         return plan
     except ValueError as e:
         await db.rollback()
@@ -146,6 +176,10 @@ async def deactivate_plan(
     try:
         await service.deactivate_plan(plan_id)
         await db.commit()
+
+        # Invalidate cache for this plan and plan lists
+        await cache.invalidate_pattern(f"plan:{plan_id}*")
+        await cache.invalidate_pattern("plan_list:*")
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -172,6 +206,12 @@ async def create_plan_version(
     try:
         new_plan = await service.create_plan_version(plan_id, plan_data)
         await db.commit()
+
+        # Invalidate cache for old plan, new plan, and plan lists
+        await cache.invalidate_pattern(f"plan:{plan_id}*")
+        await cache.invalidate_pattern(f"plan:{new_plan.id}*")
+        await cache.invalidate_pattern("plan_list:*")
+
         return new_plan
     except ValueError as e:
         await db.rollback()
