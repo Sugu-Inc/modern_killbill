@@ -65,6 +65,10 @@ app.add_middleware(SecurityEventMonitor)
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
 
+# Mount GraphQL API
+from billing.graphql import graphql_app
+app.mount("/graphql", graphql_app)
+
 
 # Exception handlers with structured error responses
 @app.exception_handler(RequestValidationError)

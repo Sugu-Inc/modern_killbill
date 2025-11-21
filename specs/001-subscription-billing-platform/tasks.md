@@ -401,11 +401,11 @@
 
 ### Implementation for US14
 
-- [ ] T131 [P] [US14] Define GraphQL schema using Strawberry in backend/src/billing/graphql/schema.py (Account, Plan, Subscription, Invoice types) [FYI]
-- [ ] T132 [P] [US14] Implement GraphQL resolvers in backend/src/billing/graphql/resolvers/ (account_resolver.py, subscription_resolver.py, invoice_resolver.py) [FYI]
-- [ ] T133 [US14] Setup DataLoader for N+1 prevention in backend/src/billing/graphql/dataloaders.py (account_loader, plan_loader, subscription_loader) [FYI]
-- [ ] T134 [US14] Implement cursor-based pagination for GraphQL queries in backend/src/billing/graphql/pagination.py [FYI]
-- [ ] T135 [US14] Mount Strawberry GraphQL app in backend/src/billing/main.py at /graphql endpoint [FYI]
+- [x] T131 [P] [US14] Define GraphQL schema using Strawberry in backend/src/billing/graphql/schema.py (Account, Plan, Subscription, Invoice types) [FYI]
+- [x] T132 [P] [US14] Implement GraphQL resolvers in backend/src/billing/graphql/resolvers.py (account_resolver, subscription_resolver, invoice_resolver) [FYI]
+- [x] T133 [US14] Setup DataLoader for N+1 prevention in backend/src/billing/graphql/resolvers.py (load_accounts, load_plans, load_subscriptions) [FYI]
+- [x] T134 [US14] Implement cursor-based pagination for GraphQL queries in backend/src/billing/graphql/resolvers.py (paginate_query, encode/decode_cursor) [FYI]
+- [x] T135 [US14] Mount Strawberry GraphQL app in backend/src/billing/main.py at /graphql endpoint [FYI]
 
 **Checkpoint**: US14 complete - GraphQL API available with efficient nested querying
 
