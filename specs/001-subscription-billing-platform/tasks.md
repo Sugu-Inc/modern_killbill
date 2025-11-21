@@ -486,6 +486,14 @@
 - [x] T164 Implement soft delete for accounts in backend/src/billing/models/account.py (deleted_at field) [Review - High risk]
 - [x] T165 Create Alembic migration to add deleted_at to accounts table [Review - High risk]
 
+### SOC2 & GDPR Compliance Enhancements (Optional Security Hardening)
+
+- [ ] T181 [P] Implement database encryption at rest in backend/alembic/ (configure PostgreSQL Transparent Data Encryption or volume-level encryption) [Review - High risk]
+- [ ] T182 [P] Add security headers middleware in backend/src/billing/middleware/security_headers.py (Content-Security-Policy, Strict-Transport-Security, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) [Review - Low risk]
+- [ ] T183 [P] Implement JWT token expiration and refresh endpoint in backend/src/billing/auth/jwt.py and backend/src/billing/api/v1/auth.py (15min access token, 7d refresh token) [Review - High risk]
+- [ ] T184 [P] Create automated database backup script in backend/scripts/backup.py with restore testing (PostgreSQL pg_dump, verify restore to test DB) [Review - Low risk]
+- [ ] T185 [P] Implement security event monitoring in backend/src/billing/middleware/security_monitor.py (track failed auth attempts, unusual access patterns, alert on threshold breach) [Review - High risk]
+
 ### Error Handling & Validation
 
 - [x] T166 [P] Implement global exception handlers in backend/src/billing/main.py (ValidationError, SQLAlchemyError, StripeError, generic Exception) [Review - Low risk]
@@ -561,9 +569,9 @@ Tasks marked with **[P]** can run in parallel within the same phase:
 ### Phase 7 (US5): T065-T068 can run in parallel
 ### Phase 19 (Polish): Most tasks can run in parallel (marked with [P])
 
-**Estimated total tasks**: 180
-**Estimated parallel reduction**: 40% (72 tasks can run simultaneously)
-**Effective sequential tasks**: ~108
+**Estimated total tasks**: 185 (167 complete, 18 remaining)
+**Estimated parallel reduction**: 40% (74 tasks can run simultaneously)
+**Effective sequential tasks**: ~111
 
 ---
 
