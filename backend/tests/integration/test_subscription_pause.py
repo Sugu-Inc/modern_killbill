@@ -17,7 +17,7 @@ from billing.models.usage_record import UsageRecord
 from billing.models.invoice import Invoice
 from billing.services.subscription_service import SubscriptionService
 from billing.services.usage_service import UsageService
-from billing.workers.billing_cycle import check_and_resume_paused_subscriptions
+from billing.workers.billing_cycle import process_auto_resume_subscriptions
 
 
 @pytest.mark.asyncio
@@ -89,9 +89,9 @@ async def test_auto_resume_on_date(async_db, test_account, test_plan):
     assert paused_subscription.status == SubscriptionStatus.PAUSED
 
     # Run background job that checks for subscriptions to resume
-    resumed_count = await check_and_resume_paused_subscriptions(async_db)
+    result = await process_auto_resume_subscriptions()
 
-    assert resumed_count >= 1
+    assert result['resumed'] >= 1
 
     # Verify subscription is resumed
     await async_db.refresh(paused_subscription)
