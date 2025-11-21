@@ -482,7 +482,7 @@
 
 ### Data Retention & Cleanup (FR-142 to FR-144)
 
-- [ ] T163 [P] Implement data retention worker in backend/src/billing/workers/data_retention.py (delete audit logs > 3 years, purge soft-deleted accounts after 30 days) [Review - High risk]
+- [x] T163 [P] Implement data retention worker in backend/src/billing/workers/data_retention.py (delete audit logs > 3 years, purge soft-deleted accounts after 30 days) [Review - High risk]
 - [x] T164 Implement soft delete for accounts in backend/src/billing/models/account.py (deleted_at field) [Review - High risk]
 - [x] T165 Create Alembic migration to add deleted_at to accounts table [Review - High risk]
 
