@@ -15,7 +15,8 @@ from sqlalchemy import select
 from billing.models.subscription import Subscription, SubscriptionStatus
 from billing.models.usage_record import UsageRecord
 from billing.models.invoice import Invoice
-from billing.schemas.subscription import SubscriptionCreate, SubscriptionPause
+from billing.schemas.subscription import SubscriptionCreate, SubscriptionPause, SubscriptionPlanChange
+from billing.schemas.usage_record import UsageRecordCreate
 from billing.services.subscription_service import SubscriptionService
 from billing.services.usage_service import UsageService
 from billing.workers.billing_cycle import process_auto_resume_subscriptions
@@ -179,10 +180,13 @@ async def test_usage_tracking_stops_during_pause(async_db, test_account, test_pl
     # Record usage while active (should succeed)
     usage_service = UsageService(async_db)
     usage_before_pause = await usage_service.record_usage(
-        subscription_id=subscription.id,
-        metric="api_calls",
-        quantity=100,
-        idempotency_key="test-usage-1"
+        UsageRecordCreate(
+            subscription_id=subscription.id,
+            metric="api_calls",
+            quantity=100,
+            timestamp=datetime.utcnow(),
+            idempotency_key="test-usage-1"
+        )
     )
 
     assert usage_before_pause is not None
@@ -198,10 +202,13 @@ async def test_usage_tracking_stops_during_pause(async_db, test_account, test_pl
     # Attempt to record usage while paused (should be rejected or ignored)
     with pytest.raises(ValueError, match="paused|inactive"):
         await usage_service.record_usage(
-            subscription_id=subscription.id,
-            metric="api_calls",
-            quantity=50,
-            idempotency_key="test-usage-2"
+            UsageRecordCreate(
+                subscription_id=subscription.id,
+                metric="api_calls",
+                quantity=50,
+                timestamp=datetime.utcnow(),
+                idempotency_key="test-usage-2"
+            )
         )
 
     # Verify only pre-pause usage was recorded
@@ -294,7 +301,9 @@ async def test_pause_prevents_plan_changes(async_db, test_account, test_plan, te
     with pytest.raises(ValueError, match="paused|cannot change"):
         await subscription_service.change_plan(
             subscription_id=paused_subscription.id,
-            new_plan_id=test_plan_premium.id
+            plan_change=SubscriptionPlanChange(
+                new_plan_id=test_plan_premium.id
+            )
         )
 
 

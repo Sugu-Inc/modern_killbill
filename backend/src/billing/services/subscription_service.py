@@ -354,6 +354,50 @@ class SubscriptionService:
         await self.db.refresh(subscription)
         return subscription
 
+    async def cancel_long_paused_subscriptions(self) -> int:
+        """
+        Cancel subscriptions that have been paused for more than 90 days.
+
+        Returns:
+            Number of subscriptions cancelled
+
+        Note:
+            This is typically called by a background worker.
+        """
+        from datetime import datetime, timedelta
+
+        ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+
+        # Find paused subscriptions older than 90 days
+        result = await self.db.execute(
+            select(Subscription).where(
+                Subscription.status == SubscriptionStatus.PAUSED,
+                Subscription.updated_at <= ninety_days_ago
+            )
+        )
+        long_paused = result.scalars().all()
+
+        cancelled_count = 0
+        for subscription in long_paused:
+            # Cancel the subscription
+            old_status = subscription.status
+            subscription.status = SubscriptionStatus.CANCELLED
+            subscription.cancelled_at = datetime.utcnow()
+
+            await self._create_history(
+                subscription.id,
+                "auto_cancelled_long_pause",
+                old_status.value,
+                SubscriptionStatus.CANCELLED.value,
+            )
+
+            cancelled_count += 1
+
+        if cancelled_count > 0:
+            await self.db.flush()
+
+        return cancelled_count
+
     async def change_plan(
         self, subscription_id: UUID, plan_change: SubscriptionPlanChange
     ) -> Subscription:
