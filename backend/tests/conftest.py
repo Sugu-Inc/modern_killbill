@@ -78,6 +78,20 @@ async def _teardown_test_db() -> None:
         await conn.run_sync(Base.metadata.drop_all)
 
 
+async def _mock_current_user() -> dict:
+    """
+    Mock current user for testing.
+
+    Returns a Super Admin user to bypass all RBAC checks in tests.
+    """
+    return {
+        "user_id": "test-user-123",
+        "email": "test@example.com",
+        "role": "Super Admin",  # Super Admin has all permissions
+        "permissions": ["*"],  # All permissions
+    }
+
+
 @pytest.fixture(scope="function")
 def client() -> Generator[TestClient, None, None]:
     """
@@ -86,7 +100,7 @@ def client() -> Generator[TestClient, None, None]:
     Returns:
         TestClient: Synchronous test client for FastAPI with test database
     """
-    from billing.api.deps import get_db
+    from billing.api.deps import get_db, get_current_user
 
     # Setup database tables
     loop = asyncio.get_event_loop()
@@ -105,6 +119,7 @@ def client() -> Generator[TestClient, None, None]:
                 await session.close()
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = _mock_current_user
 
     with TestClient(app) as test_client:
         yield test_client
@@ -125,13 +140,14 @@ async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, 
     Yields:
         AsyncClient: Async HTTP client for API testing
     """
-    from billing.api.deps import get_db
+    from billing.api.deps import get_db, get_current_user
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         """Override database dependency to use test database."""
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = _mock_current_user
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client

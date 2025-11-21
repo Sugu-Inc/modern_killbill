@@ -31,8 +31,10 @@ class RedisCache:
         """
         if not self._initialized or self.redis_client is None:
             try:
+                # Convert RedisDsn to string before passing to redis.from_url
+                redis_url_str = str(settings.redis_url)
                 self.redis_client = redis.from_url(
-                    settings.redis_url,
+                    redis_url_str,
                     encoding="utf-8",
                     decode_responses=True,
                     socket_connect_timeout=5,
@@ -41,7 +43,7 @@ class RedisCache:
                 # Test connection
                 await self.redis_client.ping()
                 self._initialized = True
-                logger.info("redis_connected", url=settings.redis_url)
+                logger.info("redis_connected", url=redis_url_str)
             except Exception as e:
                 logger.error("redis_connection_failed", error=str(e))
                 raise
