@@ -1,0 +1,673 @@
+webhooks:
+  title: Subscription Billing Platform - Webhook Events
+  version: 1.0.0
+  description: |
+    Real-time webhook notifications for billing events. Configure webhook
+    endpoints via API or admin dashboard.
+
+    ## Delivery Guarantees
+    - At-least-once delivery (retries on failure)
+    - Retry schedule: 5, 10, 30, 60, 120 minutes (5 attempts)
+    - Events delivered within 5 seconds (99th percentile)
+
+    ## Security
+    - HMAC-SHA256 signature in `X-Signature` header
+    - Verify signature using webhook signing secret
+    - Include timestamp in `X-Timestamp` header (reject old events)
+
+    ## Event Filtering
+    - Subscribe to specific event types via API
+    - Configure multiple endpoints with different filters
+
+    ## Payload Format
+    All webhooks share common envelope structure:
+    ```json
+    {
+      "event_id": "evt_...",
+      "event_type": "invoice.created",
+      "created_at": "2025-11-19T12:00:00Z",
+      "livemode": false,
+      "data": { ... }
+    }
+    ```
+
+# ==============================================================================
+# INVOICE EVENTS
+# ==============================================================================
+invoice.created:
+  post:
+    summary: Invoice Created
+    description: Sent when a new invoice is generated (subscription renewal or manual creation)
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InvoiceCreatedEvent'
+
+invoice.paid:
+  post:
+    summary: Invoice Paid
+    description: Sent when an invoice is fully paid
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InvoicePaidEvent'
+
+invoice.payment_failed:
+  post:
+    summary: Invoice Payment Failed
+    description: Sent when payment attempt fails for an invoice
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InvoicePaymentFailedEvent'
+
+invoice.voided:
+  post:
+    summary: Invoice Voided
+    description: Sent when an invoice is voided
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InvoiceVoidedEvent'
+
+# ==============================================================================
+# SUBSCRIPTION EVENTS
+# ==============================================================================
+subscription.created:
+  post:
+    summary: Subscription Created
+    description: Sent when a new subscription is created
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubscriptionCreatedEvent'
+
+subscription.updated:
+  post:
+    summary: Subscription Updated
+    description: Sent when subscription is updated (plan/quantity change)
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubscriptionUpdatedEvent'
+
+subscription.trial_ended:
+  post:
+    summary: Subscription Trial Ended
+    description: Sent when trial period ends and subscription becomes active
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubscriptionTrialEndedEvent'
+
+subscription.cancelled:
+  post:
+    summary: Subscription Cancelled
+    description: Sent when subscription is cancelled
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubscriptionCancelledEvent'
+
+subscription.paused:
+  post:
+    summary: Subscription Paused
+    description: Sent when subscription is paused
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubscriptionPausedEvent'
+
+subscription.resumed:
+  post:
+    summary: Subscription Resumed
+    description: Sent when paused subscription is resumed
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SubscriptionResumedEvent'
+
+# ==============================================================================
+# PAYMENT EVENTS
+# ==============================================================================
+payment.succeeded:
+  post:
+    summary: Payment Succeeded
+    description: Sent when payment completes successfully
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentSucceededEvent'
+
+payment.failed:
+  post:
+    summary: Payment Failed
+    description: Sent when payment attempt fails
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentFailedEvent'
+
+payment.refunded:
+  post:
+    summary: Payment Refunded
+    description: Sent when payment is refunded
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentRefundedEvent'
+
+# ==============================================================================
+# ACCOUNT EVENTS
+# ==============================================================================
+account.overdue:
+  post:
+    summary: Account Overdue
+    description: Sent when account enters overdue status (14+ days past due)
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountOverdueEvent'
+
+account.blocked:
+  post:
+    summary: Account Blocked
+    description: Sent when account is blocked due to non-payment
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountBlockedEvent'
+
+account.restored:
+  post:
+    summary: Account Restored
+    description: Sent when overdue account is restored after payment
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountRestoredEvent'
+
+# ==============================================================================
+# CREDIT EVENTS
+# ==============================================================================
+credit.created:
+  post:
+    summary: Credit Created
+    description: Sent when account credit is created
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreditCreatedEvent'
+
+credit.applied:
+  post:
+    summary: Credit Applied
+    description: Sent when credit is applied to an invoice
+    requestBody:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreditAppliedEvent'
+
+# ==============================================================================
+# SCHEMAS
+# ==============================================================================
+components:
+  schemas:
+    BaseEvent:
+      type: object
+      required: [event_id, event_type, created_at, livemode]
+      properties:
+        event_id:
+          type: string
+          description: Unique event identifier
+          example: evt_1A2B3C4D5E6F
+        event_type:
+          type: string
+          description: Event type
+        created_at:
+          type: string
+          format: date-time
+          description: Event creation timestamp
+        livemode:
+          type: boolean
+          description: Production mode flag
+        data:
+          type: object
+          description: Event-specific data
+
+    InvoiceCreatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [invoice.created]
+            data:
+              type: object
+              properties:
+                invoice:
+                  $ref: '#/components/schemas/InvoiceObject'
+                account_id:
+                  type: string
+                subscription_id:
+                  type: string
+                  nullable: true
+
+    InvoicePaidEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [invoice.paid]
+            data:
+              type: object
+              properties:
+                invoice:
+                  $ref: '#/components/schemas/InvoiceObject'
+                payment_id:
+                  type: string
+                account_id:
+                  type: string
+
+    InvoicePaymentFailedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [invoice.payment_failed]
+            data:
+              type: object
+              properties:
+                invoice:
+                  $ref: '#/components/schemas/InvoiceObject'
+                payment_id:
+                  type: string
+                failure_message:
+                  type: string
+                retry_scheduled:
+                  type: boolean
+                next_retry_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+
+    InvoiceVoidedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [invoice.voided]
+            data:
+              type: object
+              properties:
+                invoice:
+                  $ref: '#/components/schemas/InvoiceObject'
+                void_reason:
+                  type: string
+
+    SubscriptionCreatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [subscription.created]
+            data:
+              type: object
+              properties:
+                subscription:
+                  $ref: '#/components/schemas/SubscriptionObject'
+                account_id:
+                  type: string
+                plan_id:
+                  type: string
+
+    SubscriptionUpdatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [subscription.updated]
+            data:
+              type: object
+              properties:
+                subscription:
+                  $ref: '#/components/schemas/SubscriptionObject'
+                previous_attributes:
+                  type: object
+                  description: Fields that changed
+                  properties:
+                    plan_id:
+                      type: string
+                    quantity:
+                      type: integer
+
+    SubscriptionTrialEndedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [subscription.trial_ended]
+            data:
+              type: object
+              properties:
+                subscription:
+                  $ref: '#/components/schemas/SubscriptionObject'
+                invoice_id:
+                  type: string
+                  description: First invoice generated
+
+    SubscriptionCancelledEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [subscription.cancelled]
+            data:
+              type: object
+              properties:
+                subscription:
+                  $ref: '#/components/schemas/SubscriptionObject'
+                cancelled_at:
+                  type: string
+                  format: date-time
+                cancellation_reason:
+                  type: string
+                  nullable: true
+
+    SubscriptionPausedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [subscription.paused]
+            data:
+              type: object
+              properties:
+                subscription:
+                  $ref: '#/components/schemas/SubscriptionObject'
+                pause_resumes_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+
+    SubscriptionResumedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [subscription.resumed]
+            data:
+              type: object
+              properties:
+                subscription:
+                  $ref: '#/components/schemas/SubscriptionObject'
+                resumed_at:
+                  type: string
+                  format: date-time
+
+    PaymentSucceededEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [payment.succeeded]
+            data:
+              type: object
+              properties:
+                payment:
+                  $ref: '#/components/schemas/PaymentObject'
+                invoice_id:
+                  type: string
+                account_id:
+                  type: string
+
+    PaymentFailedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [payment.failed]
+            data:
+              type: object
+              properties:
+                payment:
+                  $ref: '#/components/schemas/PaymentObject'
+                invoice_id:
+                  type: string
+                failure_code:
+                  type: string
+                failure_message:
+                  type: string
+
+    PaymentRefundedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [payment.refunded]
+            data:
+              type: object
+              properties:
+                payment:
+                  $ref: '#/components/schemas/PaymentObject'
+                refund_amount:
+                  type: integer
+                refund_reason:
+                  type: string
+
+    AccountOverdueEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [account.overdue]
+            data:
+              type: object
+              properties:
+                account_id:
+                  type: string
+                days_overdue:
+                  type: integer
+                total_overdue_amount:
+                  type: integer
+                overdue_invoices:
+                  type: array
+                  items:
+                    type: string
+                    description: Invoice IDs
+
+    AccountBlockedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [account.blocked]
+            data:
+              type: object
+              properties:
+                account_id:
+                  type: string
+                blocked_at:
+                  type: string
+                  format: date-time
+                reason:
+                  type: string
+                  example: Payment failed after 10 days
+
+    AccountRestoredEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [account.restored]
+            data:
+              type: object
+              properties:
+                account_id:
+                  type: string
+                restored_at:
+                  type: string
+                  format: date-time
+                payment_id:
+                  type: string
+                  description: Payment that restored the account
+
+    CreditCreatedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [credit.created]
+            data:
+              type: object
+              properties:
+                credit:
+                  $ref: '#/components/schemas/CreditObject'
+                account_id:
+                  type: string
+
+    CreditAppliedEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          properties:
+            event_type:
+              enum: [credit.applied]
+            data:
+              type: object
+              properties:
+                credit:
+                  $ref: '#/components/schemas/CreditObject'
+                invoice_id:
+                  type: string
+                account_id:
+                  type: string
+
+    # ==============================================================================
+    # Object Definitions (full payloads)
+    # ==============================================================================
+    InvoiceObject:
+      type: object
+      properties:
+        id:
+          type: string
+        number:
+          type: string
+        account_id:
+          type: string
+        subscription_id:
+          type: string
+          nullable: true
+        status:
+          type: string
+        amount_due:
+          type: integer
+        amount_paid:
+          type: integer
+        tax:
+          type: integer
+        currency:
+          type: string
+        due_date:
+          type: string
+          format: date-time
+        line_items:
+          type: array
+          items:
+            type: object
+        created_at:
+          type: string
+          format: date-time
+
+    SubscriptionObject:
+      type: object
+      properties:
+        id:
+          type: string
+        account_id:
+          type: string
+        plan_id:
+          type: string
+        status:
+          type: string
+        quantity:
+          type: integer
+        current_period_start:
+          type: string
+          format: date-time
+        current_period_end:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    PaymentObject:
+      type: object
+      properties:
+        id:
+          type: string
+        invoice_id:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+        gateway_transaction_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CreditObject:
+      type: object
+      properties:
+        id:
+          type: string
+        account_id:
+          type: string
+        amount:
+          type: integer
+        currency:
+          type: string
+        reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time

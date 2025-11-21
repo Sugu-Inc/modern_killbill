@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: billing
+
+resources:
+- configmap.yaml
+- deployment.yaml
+- service.yaml
+- ingress.yaml
+- autoscaling.yaml
+- servicemonitor.yaml
+
+commonLabels:
+  app.kubernetes.io/name: billing-api
+  app.kubernetes.io/component: backend
+  app.kubernetes.io/part-of: billing-platform
+
+images:
+- name: billing-api
+  newName: ghcr.io/yourorg/billing-api
+  newTag: latest
+
+configMapGenerator:
+- name: billing-config
+  behavior: merge
+  literals:
+  - LOG_LEVEL=INFO
+  - DEBUG=false
+
+secretGenerator:
+- name: billing-secrets
+  behavior: merge
+  envs:
+  - secrets.env
+
+replicas:
+- name: billing-api
+  count: 3

@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: billing-config
+  namespace: billing
+  labels:
+    app: billing-api
+data:
+  # Application configuration
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+
+  # CORS configuration
+  CORS_ORIGINS: "https://app.example.com,https://dashboard.example.com"
+
+  # Rate limiting
+  RATE_LIMIT_PER_HOUR: "1000"
+
+  # Company branding (for invoices)
+  COMPANY_NAME: "Your Company"
+  LOGO_URL: "https://cdn.example.com/logo.png"
+  BRAND_PRIMARY_COLOR: "#000000"
+  BRAND_SECONDARY_COLOR: "#FFFFFF"
+
+  # OpenTelemetry configuration
+  OTEL_SERVICE_NAME: "billing-api"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4318"
+
+  # JWT configuration
+  JWT_ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+
+  # Stripe configuration (non-sensitive)
+  STRIPE_PUBLISHABLE_KEY: "pk_live_placeholder"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: billing-secrets
+  namespace: billing
+  labels:
+    app: billing-api
+type: Opaque
+stringData:
+  # Database connection
+  database-url: "postgresql+asyncpg://billing:CHANGEME@postgres:5432/billing"
+
+  # Redis connection
+  redis-url: "redis://redis:6379/0"
+  arq-redis-url: "redis://redis:6379/1"
+
+  # Stripe API keys
+  stripe-secret-key: "sk_live_CHANGEME"
+  stripe-webhook-secret: "whsec_CHANGEME"
+
+  # Application secrets
+  secret-key: "CHANGEME-generate-secure-random-key"
+  jwt-secret-key: "CHANGEME-generate-secure-random-key"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: billing
+  labels:
+    name: billing
+    environment: production

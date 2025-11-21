@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-api
+  namespace: billing
+  labels:
+    app: billing-api
+    component: backend
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  - port: 8000
+    targetPort: metrics
+    protocol: TCP
+    name: metrics
+  selector:
+    app: billing-api
+    component: backend
+  sessionAffinity: None
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: billing-api-headless
+  namespace: billing
+  labels:
+    app: billing-api
+    component: backend
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 80
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: billing-api
+    component: backend

@@ -1,0 +1,1065 @@
+openapi: 3.0.3
+info:
+  title: Modern Subscription Billing Platform API
+  description: |
+    Cloud-native subscription billing API providing account management, subscriptions,
+    invoicing, payment processing, usage billing, and analytics.
+
+    ## Features
+    - Multi-currency support (USD, EUR, GBP, CAD, AUD, JPY)
+    - Per-seat/quantity-based pricing
+    - Automated dunning and payment retries
+    - Usage-based billing with tiered pricing
+    - Real-time webhooks for all events
+    - GraphQL API for complex queries (see schema.graphql)
+
+    ## Authentication
+    All endpoints require Bearer token authentication via JWT.
+    Include `Authorization: Bearer <token>` header.
+
+    ## Rate Limiting
+    1000 requests per hour per API key.
+    Rate limit headers included in all responses:
+    - `X-RateLimit-Limit`: Request limit
+    - `X-RateLimit-Remaining`: Remaining requests
+    - `X-RateLimit-Reset`: Reset timestamp
+
+    ## Idempotency
+    POST/PATCH/DELETE requests support idempotency via `Idempotency-Key` header.
+    Same key within 24 hours returns cached response.
+
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api@example.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.billing.example.com/v1
+    description: Production
+  - url: https://api.staging.billing.example.com/v1
+    description: Staging
+  - url: http://localhost:8000/v1
+    description: Local Development
+
+tags:
+  - name: Health
+    description: Service health and monitoring
+  - name: Accounts
+    description: Customer account management
+  - name: Plans
+    description: Pricing plan templates
+  - name: Subscriptions
+    description: Customer subscriptions
+  - name: Invoices
+    description: Billing statements
+  - name: Payments
+    description: Payment transactions
+  - name: Usage
+    description: Metered usage tracking
+  - name: Credits
+    description: Account credits and adjustments
+  - name: Analytics
+    description: Business metrics (MRR, churn, LTV)
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ============================================================================
+  # HEALTH & MONITORING
+  # ============================================================================
+  /health:
+    get:
+      tags: [Health]
+      summary: Health check (liveness probe)
+      description: |
+        Basic health check for Kubernetes liveness probe.
+        Returns 200 if service is alive (process running).
+        Does not check external dependencies.
+      operationId: healthCheck
+      security: []  # No auth required for health checks
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2025-11-19T12:00:00Z"
+                  version:
+                    type: string
+                    example: "1.0.0"
+
+  /health/ready:
+    get:
+      tags: [Health]
+      summary: Readiness check (readiness probe)
+      description: |
+        Readiness check for Kubernetes readiness probe.
+        Verifies service can handle requests by checking:
+        - Database connectivity
+        - Redis connectivity
+        - Stripe API reachability (optional)
+        Returns 200 only if all critical dependencies are healthy.
+      operationId: readinessCheck
+      security: []  # No auth required for health checks
+      responses:
+        '200':
+          description: Service is ready to accept traffic
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                    example: true
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [connected, disconnected]
+                        example: connected
+                      redis:
+                        type: string
+                        enum: [connected, disconnected]
+                        example: connected
+                      stripe:
+                        type: string
+                        enum: [reachable, unreachable, unknown]
+                        example: reachable
+                  timestamp:
+                    type: string
+                    format: date-time
+        '503':
+          description: Service not ready (dependencies unavailable)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ready:
+                    type: boolean
+                    example: false
+                  checks:
+                    type: object
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus metrics endpoint
+      description: |
+        Exposes metrics in Prometheus text format for scraping.
+        Includes business metrics (MRR, invoices generated, payment success rate)
+        and system metrics (request latency, error rate, database pool usage).
+      operationId: prometheusMetrics
+      security: []  # No auth required for metrics scraping
+      responses:
+        '200':
+          description: Metrics in Prometheus text format
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP invoices_generated_total Total invoices generated
+                  # TYPE invoices_generated_total counter
+                  invoices_generated_total 12543
+
+                  # HELP payments_attempted_total Total payment attempts
+                  # TYPE payments_attempted_total counter
+                  payments_attempted_total{status="succeeded"} 8432
+                  payments_attempted_total{status="failed"} 234
+
+                  # HELP mrr_dollars Monthly Recurring Revenue in dollars
+                  # TYPE mrr_dollars gauge
+                  mrr_dollars 125000.50
+
+                  # HELP api_request_duration_seconds API request duration
+                  # TYPE api_request_duration_seconds histogram
+                  api_request_duration_seconds_bucket{method="POST",endpoint="/subscriptions",le="0.1"} 5432
+                  api_request_duration_seconds_bucket{method="POST",endpoint="/subscriptions",le="0.5"} 6234
+                  api_request_duration_seconds_sum{method="POST",endpoint="/subscriptions"} 123.45
+                  api_request_duration_seconds_count{method="POST",endpoint="/subscriptions"} 6543
+
+  # ============================================================================
+  # ACCOUNTS
+  # ============================================================================
+  /accounts:
+    get:
+      tags: [Accounts]
+      summary: List accounts
+      operationId: listAccounts
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: email
+          in: query
+          schema:
+            type: string
+          description: Filter by email (exact match)
+      responses:
+        '200':
+          description: List of accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  has_more:
+                    type: boolean
+                  next_cursor:
+                    type: string
+                    nullable: true
+
+    post:
+      tags: [Accounts]
+      summary: Create account
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Account with email already exists
+
+  /accounts/{account_id}:
+    get:
+      tags: [Accounts]
+      summary: Retrieve account
+      operationId: getAccount
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Accounts]
+      summary: Update account
+      operationId: updateAccount
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountUpdate'
+      responses:
+        '200':
+          description: Account updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+
+  /accounts/{account_id}/payment-methods:
+    post:
+      tags: [Accounts]
+      summary: Add payment method
+      operationId: addPaymentMethod
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [payment_method_token]
+              properties:
+                payment_method_token:
+                  type: string
+                  description: Stripe payment method token
+                set_as_default:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Payment method added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentMethod'
+
+  # ============================================================================
+  # PLANS
+  # ============================================================================
+  /plans:
+    get:
+      tags: [Plans]
+      summary: List plans
+      operationId: listPlans
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - name: active
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status
+      responses:
+        '200':
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Plan'
+
+    post:
+      tags: [Plans]
+      summary: Create plan
+      operationId: createPlan
+      security:
+        - BearerAuth: [billing_admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlanCreate'
+      responses:
+        '201':
+          description: Plan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+
+  /plans/{plan_id}:
+    get:
+      tags: [Plans]
+      summary: Retrieve plan
+      operationId: getPlan
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '200':
+          description: Plan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plan'
+
+  # ============================================================================
+  # SUBSCRIPTIONS
+  # ============================================================================
+  /subscriptions:
+    post:
+      tags: [Subscriptions]
+      summary: Create subscription
+      operationId: createSubscription
+      description: |
+        Create a subscription for an account. If account has default payment method
+        and plan has no trial, first invoice is generated and payment attempted immediately.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionCreate'
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  /subscriptions/{subscription_id}:
+    get:
+      tags: [Subscriptions]
+      summary: Retrieve subscription
+      operationId: getSubscription
+      parameters:
+        - $ref: '#/components/parameters/SubscriptionId'
+      responses:
+        '200':
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+    patch:
+      tags: [Subscriptions]
+      summary: Update subscription
+      operationId: updateSubscription
+      description: |
+        Update subscription (change plan, quantity). Proration is automatic.
+        Mid-period changes generate immediate invoice with prorated charges/credits.
+      parameters:
+        - $ref: '#/components/parameters/SubscriptionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriptionUpdate'
+      responses:
+        '200':
+          description: Subscription updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  /subscriptions/{subscription_id}/cancel:
+    post:
+      tags: [Subscriptions]
+      summary: Cancel subscription
+      operationId: cancelSubscription
+      parameters:
+        - $ref: '#/components/parameters/SubscriptionId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cancel_at_period_end:
+                  type: boolean
+                  default: false
+                  description: Cancel at end of billing period (false = immediate)
+      responses:
+        '200':
+          description: Subscription cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  /subscriptions/{subscription_id}/pause:
+    post:
+      tags: [Subscriptions]
+      summary: Pause subscription
+      operationId: pauseSubscription
+      parameters:
+        - $ref: '#/components/parameters/SubscriptionId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resume_at:
+                  type: string
+                  format: date-time
+                  description: Auto-resume date (optional)
+      responses:
+        '200':
+          description: Subscription paused
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  # ============================================================================
+  # INVOICES
+  # ============================================================================
+  /invoices:
+    get:
+      tags: [Invoices]
+      summary: List invoices
+      operationId: listInvoices
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - name: account_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: subscription_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [DRAFT, OPEN, PAID, VOID]
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Invoice'
+                  has_more:
+                    type: boolean
+                  next_cursor:
+                    type: string
+
+  /invoices/{invoice_id}:
+    get:
+      tags: [Invoices]
+      summary: Retrieve invoice
+      operationId: getInvoice
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      responses:
+        '200':
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+
+  /invoices/{invoice_id}/void:
+    post:
+      tags: [Invoices]
+      summary: Void invoice
+      operationId: voidInvoice
+      security:
+        - BearerAuth: [billing_admin, support_rep]
+      parameters:
+        - $ref: '#/components/parameters/InvoiceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  description: Reason for voiding
+      responses:
+        '200':
+          description: Invoice voided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+
+  # ============================================================================
+  # USAGE
+  # ============================================================================
+  /usage:
+    post:
+      tags: [Usage]
+      summary: Record usage
+      operationId: recordUsage
+      description: |
+        Record usage for a subscription. Idempotent via `idempotency_key`.
+        Submitting same key multiple times returns success (deduplication).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subscription_id, metric, quantity, timestamp, idempotency_key]
+              properties:
+                subscription_id:
+                  type: string
+                  format: uuid
+                metric:
+                  type: string
+                  example: api_calls
+                quantity:
+                  type: number
+                  example: 1500
+                timestamp:
+                  type: string
+                  format: date-time
+                idempotency_key:
+                  type: string
+                  description: Unique key for deduplication
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Usage recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  usage_id:
+                    type: string
+                    format: uuid
+
+  # ============================================================================
+  # CREDITS
+  # ============================================================================
+  /credits:
+    post:
+      tags: [Credits]
+      summary: Create credit
+      operationId: createCredit
+      security:
+        - BearerAuth: [billing_admin, support_rep]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [account_id, amount, reason]
+              properties:
+                account_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: integer
+                  description: Credit amount in cents
+                  example: 5000
+                reason:
+                  type: string
+                  example: Service outage compensation
+      responses:
+        '201':
+          description: Credit created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Credit'
+
+  # ============================================================================
+  # ANALYTICS
+  # ============================================================================
+  /analytics/mrr:
+    get:
+      tags: [Analytics]
+      summary: Get MRR (Monthly Recurring Revenue)
+      operationId: getMRR
+      security:
+        - BearerAuth: [billing_admin, finance_viewer]
+      responses:
+        '200':
+          description: MRR metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current_mrr:
+                    type: number
+                    example: 125000.00
+                  mrr_growth_rate:
+                    type: number
+                    example: 0.15
+                  history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        period:
+                          type: string
+                          format: date
+                        mrr:
+                          type: number
+
+# ==============================================================================
+# COMPONENTS
+# ==============================================================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    AccountId:
+      name: account_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PlanId:
+      name: plan_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    SubscriptionId:
+      name: subscription_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    InvoiceId:
+      name: invoice_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Cursor for pagination
+
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        currency:
+          type: string
+          example: USD
+        timezone:
+          type: string
+          example: America/New_York
+        tax_exempt:
+          type: boolean
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AccountCreate:
+      type: object
+      required: [email, name]
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        currency:
+          type: string
+          default: USD
+        timezone:
+          type: string
+        tax_exempt:
+          type: boolean
+          default: false
+        metadata:
+          type: object
+
+    AccountUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        timezone:
+          type: string
+        tax_exempt:
+          type: boolean
+        metadata:
+          type: object
+
+    Plan:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        interval:
+          type: string
+          enum: [month, year]
+        amount:
+          type: integer
+          description: Price in cents
+        currency:
+          type: string
+        trial_days:
+          type: integer
+        usage_type:
+          type: string
+          enum: [licensed, metered, hybrid]
+        tiers:
+          type: array
+          items:
+            type: object
+            properties:
+              up_to:
+                type: integer
+                nullable: true
+              unit_price:
+                type: integer
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    PlanCreate:
+      type: object
+      required: [name, interval, amount, currency]
+      properties:
+        name:
+          type: string
+        interval:
+          type: string
+          enum: [month, year]
+        amount:
+          type: integer
+        currency:
+          type: string
+        trial_days:
+          type: integer
+          default: 0
+        usage_type:
+          type: string
+          enum: [licensed, metered, hybrid]
+          default: licensed
+        tiers:
+          type: array
+          items:
+            type: object
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [TRIAL, ACTIVE, PAUSED, CANCELLED, EXPIRED]
+        quantity:
+          type: integer
+        current_period_start:
+          type: string
+          format: date-time
+        current_period_end:
+          type: string
+          format: date-time
+        trial_end:
+          type: string
+          format: date-time
+          nullable: true
+        cancel_at_period_end:
+          type: boolean
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+
+    SubscriptionCreate:
+      type: object
+      required: [account_id, plan_id]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          default: 1
+        trial_override_days:
+          type: integer
+          nullable: true
+        metadata:
+          type: object
+
+    SubscriptionUpdate:
+      type: object
+      properties:
+        plan_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+        proration_behavior:
+          type: string
+          enum: [create_prorations, none, always_invoice]
+          default: create_prorations
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        account_id:
+          type: string
+          format: uuid
+        subscription_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+          enum: [DRAFT, OPEN, PAID, VOID]
+        amount_due:
+          type: integer
+        amount_paid:
+          type: integer
+        tax:
+          type: integer
+        currency:
+          type: string
+        due_date:
+          type: string
+          format: date-time
+        line_items:
+          type: array
+          items:
+            type: object
+            properties:
+              description:
+                type: string
+              quantity:
+                type: integer
+              unit_amount:
+                type: integer
+              amount:
+                type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [card, ach_debit]
+        card_last4:
+          type: string
+        card_brand:
+          type: string
+        card_exp_month:
+          type: integer
+        card_exp_year:
+          type: integer
+        is_default:
+          type: boolean
+
+    Credit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        account_id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+        currency:
+          type: string
+        reason:
+          type: string
+        applied_to_invoice_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
