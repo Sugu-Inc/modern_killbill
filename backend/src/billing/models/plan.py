@@ -17,9 +17,11 @@ class PlanInterval(enum.Enum):
 class UsageType(enum.Enum):
     """Usage billing type."""
 
-    TIERED = "tiered"
-    VOLUME = "volume"
-    GRADUATED = "graduated"
+    LICENSED = "licensed"  # Flat-rate per-seat licensing
+    METERED = "metered"  # Usage-based metered billing
+    TIERED = "tiered"  # Tiered pricing
+    VOLUME = "volume"  # Volume-based pricing
+    GRADUATED = "graduated"  # Graduated pricing
 
 
 class Plan(Base):

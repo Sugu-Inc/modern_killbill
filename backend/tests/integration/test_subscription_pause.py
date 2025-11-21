@@ -15,6 +15,7 @@ from sqlalchemy import select
 from billing.models.subscription import Subscription, SubscriptionStatus
 from billing.models.usage_record import UsageRecord
 from billing.models.invoice import Invoice
+from billing.schemas.subscription import SubscriptionCreate, SubscriptionPause
 from billing.services.subscription_service import SubscriptionService
 from billing.services.usage_service import UsageService
 from billing.workers.billing_cycle import process_auto_resume_subscriptions
@@ -32,10 +33,14 @@ async def test_pause_stops_billing(async_db, test_account, test_plan):
     # Create active subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan.id,
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan.id,
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     assert subscription.status == SubscriptionStatus.ACTIVE
 
@@ -74,10 +79,14 @@ async def test_auto_resume_on_date(async_db, test_account, test_plan):
     # Create and pause subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan.id,
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan.id,
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     # Pause with resume date in the past (to simulate resume time has arrived)
     past_resume_date = datetime.utcnow() - timedelta(days=1)
@@ -85,6 +94,7 @@ async def test_auto_resume_on_date(async_db, test_account, test_plan):
         subscription_id=subscription.id,
         resume_at=past_resume_date
     )
+    await async_db.commit()
 
     assert paused_subscription.status == SubscriptionStatus.PAUSED
 
@@ -111,16 +121,21 @@ async def test_auto_cancel_after_90_days(async_db, test_account, test_plan):
     # Create and pause subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan.id,
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan.id,
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     # Pause subscription indefinitely (no resume date)
     paused_subscription = await subscription_service.pause_subscription(
         subscription_id=subscription.id,
         resume_at=None  # No resume date
     )
+    await async_db.commit()
 
     # Simulate 91 days have passed by backdating the pause
     paused_subscription.updated_at = datetime.utcnow() - timedelta(days=91)
@@ -148,10 +163,14 @@ async def test_usage_tracking_stops_during_pause(async_db, test_account, test_pl
     # Create usage-based subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan_usage.id,  # Usage-based plan
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan_usage.id,  # Usage-based plan
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     # Record usage while active (should succeed)
     usage_service = UsageService(async_db)
@@ -202,10 +221,14 @@ async def test_pause_and_resume_workflow(async_db, test_account, test_plan):
     # Create subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan.id,
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan.id,
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     initial_status = subscription.status
     assert initial_status == SubscriptionStatus.ACTIVE
@@ -243,15 +266,20 @@ async def test_pause_prevents_plan_changes(async_db, test_account, test_plan, te
     # Create and pause subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan.id,
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan.id,
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     paused_subscription = await subscription_service.pause_subscription(
         subscription_id=subscription.id,
         resume_at=datetime.utcnow() + timedelta(days=30)
     )
+    await async_db.commit()
 
     # Attempt to change plan while paused
     with pytest.raises(ValueError, match="paused|cannot change"):
@@ -273,10 +301,14 @@ async def test_pause_with_pending_invoice(async_db, test_account, test_plan):
     # Create subscription (generates first invoice)
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan.id,
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan.id,
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     # Get the initial invoice
     stmt = select(Invoice).where(
@@ -317,10 +349,14 @@ async def test_resume_reactivates_billing_cycle(async_db, test_account, test_pla
     # Create and pause subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
-        account_id=test_account.id,
-        plan_id=test_plan.id,
-        quantity=1
+        SubscriptionCreate(
+            account_id=test_account.id,
+            plan_id=test_plan.id,
+            quantity=1
+        )
     )
+    await async_db.commit()
+    await async_db.refresh(subscription)
 
     original_period_end = subscription.current_period_end
 
@@ -345,54 +381,3 @@ async def test_resume_reactivates_billing_cycle(async_db, test_account, test_pla
     # Allow 1-day tolerance for date calculations
     time_diff = abs((resumed_subscription.current_period_end - expected_new_period_end).days)
     assert time_diff <= 1
-
-
-# Fixtures
-
-@pytest.fixture
-async def test_plan_usage(async_db):
-    """Create a usage-based test plan."""
-    from billing.models.plan import Plan, UsageType
-
-    plan = Plan(
-        name="API Platform - Usage Based",
-        interval="month",
-        amount=0,  # Base amount
-        currency="USD",
-        trial_days=0,
-        usage_type=UsageType.METERED,
-        tiers=[
-            {"up_to": 1000, "unit_price": 0},  # First 1K free
-            {"up_to": 10000, "unit_price": 0.01},  # $0.01 per call
-            {"up_to": None, "unit_price": 0.005},  # $0.005 per call above 10K
-        ],
-        active=True
-    )
-
-    async_db.add(plan)
-    await async_db.commit()
-    await async_db.refresh(plan)
-
-    return plan
-
-
-@pytest.fixture
-async def test_plan_premium(async_db):
-    """Create a premium test plan."""
-    from billing.models.plan import Plan
-
-    plan = Plan(
-        name="Premium Plan",
-        interval="month",
-        amount=9900,  # $99.00
-        currency="USD",
-        trial_days=0,
-        usage_type="licensed",
-        active=True
-    )
-
-    async_db.add(plan)
-    await async_db.commit()
-    await async_db.refresh(plan)
-
-    return plan
