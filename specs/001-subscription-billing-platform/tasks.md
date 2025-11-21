@@ -443,13 +443,13 @@
 
 ### Implementation for US16
 
-- [ ] T144 [US16] Add PAUSED status and pause_resumes_at field to Subscription model in backend/src/billing/models/subscription.py [Review - Low risk]
-- [ ] T145 [US16] Create Alembic migration to add pause_resumes_at to subscriptions table [Review - Low risk]
-- [ ] T146 [US16] Implement pause_subscription and resume_subscription methods in backend/src/billing/services/subscription_service.py (auto-cancel if paused > 90 days) [Review - High risk]
-- [ ] T147 [US16] Implement POST /v1/subscriptions/{subscription_id}/pause endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
-- [ ] T148 [US16] Implement POST /v1/subscriptions/{subscription_id}/resume endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
-- [ ] T149 [US16] Update billing cycle worker to skip paused subscriptions in backend/src/billing/workers/billing_cycle.py [Review - Low risk]
-- [ ] T150 [US16] Add background job to auto-resume subscriptions in backend/src/billing/workers/billing_cycle.py (check pause_resumes_at dates) [Review - Low risk]
+- [x] T144 [US16] Add PAUSED status and pause_resumes_at field to Subscription model in backend/src/billing/models/subscription.py [Review - Low risk]
+- [x] T145 [US16] Create Alembic migration to add pause_resumes_at to subscriptions table [Review - Low risk]
+- [x] T146 [US16] Implement pause_subscription and resume_subscription methods in backend/src/billing/services/subscription_service.py (auto-cancel if paused > 90 days) [Review - High risk]
+- [x] T147 [US16] Implement POST /v1/subscriptions/{subscription_id}/pause endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
+- [x] T148 [US16] Implement POST /v1/subscriptions/{subscription_id}/resume endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
+- [x] T149 [US16] Update billing cycle worker to skip paused subscriptions in backend/src/billing/workers/billing_cycle.py [Review - Low risk]
+- [x] T150 [US16] Add background job to auto-resume subscriptions in backend/src/billing/workers/billing_cycle.py (check pause_resumes_at dates) [Review - Low risk]
 
 **Checkpoint**: US16 complete - subscriptions can be paused and auto-resume
 
@@ -483,8 +483,8 @@
 ### Data Retention & Cleanup (FR-142 to FR-144)
 
 - [ ] T163 [P] Implement data retention worker in backend/src/billing/workers/data_retention.py (delete audit logs > 3 years, purge soft-deleted accounts after 30 days) [Review - High risk]
-- [ ] T164 Implement soft delete for accounts in backend/src/billing/models/account.py (deleted_at field) [Review - High risk]
-- [ ] T165 Create Alembic migration to add deleted_at to accounts table [Review - High risk]
+- [x] T164 Implement soft delete for accounts in backend/src/billing/models/account.py (deleted_at field) [Review - High risk]
+- [x] T165 Create Alembic migration to add deleted_at to accounts table [Review - High risk]
 
 ### Error Handling & Validation
 
