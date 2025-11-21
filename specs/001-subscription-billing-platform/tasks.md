@@ -199,11 +199,11 @@
 - [x] T068 [P] [US5] Create Pydantic schemas in backend/src/billing/schemas/payment.py (PaymentResponse, PaymentStatus enum) [FYI]
 - [x] T069 [US5] Create Alembic migration for payments table (indexes on invoice_id, status, idempotency_key) [Review - Low risk]
 - [x] T070 [US5] Implement PaymentService in backend/src/billing/services/payment_service.py (attempt_payment with Stripe integration, schedule_retry, process_retry_schedule [day 3,5,7,10], mark_account_overdue) [Review - High risk]
-- [ ] T071 [US5] Extend Stripe adapter in backend/src/billing/integrations/stripe.py (charge_payment_method with idempotency key, handle_webhook_events for payment confirmations) [Review - High risk]
+- [x] T071 [US5] Extend Stripe adapter in backend/src/billing/adapters/stripe_adapter.py (charge_payment_method with idempotency key, handle_webhook_events for payment confirmations) [Review - High risk]
 - [x] T072 [US5] Implement POST /v1/payments/retry endpoint in backend/src/billing/api/v1/payments.py (manual retry trigger) [Review - Low risk]
 - [x] T073 [US5] Implement GET /v1/payments endpoint in backend/src/billing/api/v1/payments.py (filter by invoice, status) [FYI]
-- [ ] T074 [US5] Implement Stripe webhook handler in backend/src/billing/api/webhooks/stripe.py (verify signature, process payment_intent.succeeded, payment_intent.payment_failed) [Review - High risk]
-- [ ] T075 [US5] Implement background worker for payment retries in backend/src/billing/workers/payment_retry.py (ARQ scheduled job to process retry queue) [Review - High risk]
+- [x] T074 [US5] Implement Stripe webhook handler in backend/src/billing/api/webhooks/stripe.py (verify signature, process payment_intent.succeeded, payment_intent.payment_failed) [Review - High risk]
+- [x] T075 [US5] Implement background worker for payment retries in backend/src/billing/workers/payment_retry.py (ARQ scheduled job to process retry queue) [Review - High risk]
 - [x] T076 [US5] Add payment attempt to billing cycle worker in backend/src/billing/workers/billing_cycle.py (auto-attempt payment after invoice generation) [Review - High risk]
 
 **Checkpoint**: US5 complete - payments auto-attempt, retries work, overdue handling implemented
@@ -226,7 +226,7 @@
 - [x] T079 [US6] Implement change_plan method in backend/src/billing/services/subscription_service.py (immediate upgrade with proration, end-of-period downgrade scheduling, quantity changes) [Review - High risk]
 - [x] T080 [US6] Enhance proration logic in backend/src/billing/services/invoice_service.py (handle upgrades, downgrades, annual-to-monthly conversions, per-seat quantity changes) [Review - High risk]
 - [x] T081 [US6] Implement PATCH /v1/subscriptions/{subscription_id} endpoint in backend/src/billing/api/v1/subscriptions.py (change plan, change quantity, schedule_change_at_period_end flag) [Review - Low risk]
-- [ ] T082 [US6] Implement background job to process scheduled plan changes in backend/src/billing/workers/billing_cycle.py (check for pending changes at period end) [Review - High risk]
+- [x] T082 [US6] Implement background job to process scheduled plan changes in backend/src/billing/workers/billing_cycle.py (check for pending changes at period end) [Review - High risk]
 
 **Checkpoint**: US6 complete - plan changes work with proration, scheduling supported
 
@@ -252,7 +252,7 @@
 - [x] T089 [US7] Integrate usage charge calculation into InvoiceService in backend/src/billing/services/invoice_service.py (add usage line items to invoice) [Review - High risk]
 - [x] T090 [US7] Implement POST /v1/usage endpoint in backend/src/billing/api/v1/usage.py (submit usage events with idempotency_key) [Review - Low risk]
 - [x] T091 [US7] Implement GET /v1/subscriptions/{subscription_id}/usage endpoint in backend/src/billing/api/v1/subscriptions.py (query usage for period) [FYI]
-- [ ] T092 [US7] Implement background job for late usage processing in backend/src/billing/workers/usage_finalizer.py (generate supplemental invoices for usage arriving after period close, within 7-day window) [Review - High risk]
+- [x] T092 [US7] Implement background job for late usage processing in backend/src/billing/workers/usage_finalizer.py (generate supplemental invoices for usage arriving after period close, within 7-day window) [Review - High risk]
 
 **Checkpoint**: US7 complete - usage tracking works, tier billing implemented, late usage handled
 
@@ -273,7 +273,7 @@
 - [x] T094 [US8] Implement DunningService in backend/src/billing/services/dunning_service.py (check_overdue_invoices, send_reminder [day 3], send_warning [day 7], block_account [day 14], unblock_on_payment) [Review - Low risk]
 - [x] T095 [US8] Add account status field to Account model in backend/src/billing/models/account.py (status enum: ACTIVE, WARNING, BLOCKED) [Review - Low risk]
 - [x] T096 [US8] Create Alembic migration to add status column to accounts table [Review - Low risk]
-- [ ] T097 [US8] Implement background worker for dunning process in backend/src/billing/workers/dunning.py (ARQ scheduled daily job) [Review - Low risk]
+- [x] T097 [US8] Implement background worker for dunning process in backend/src/billing/workers/dunning.py (ARQ scheduled daily job) [Review - Low risk]
 - [x] T098 [US8] Implement notification service integration in backend/src/billing/integrations/notification_service.py (send email/SMS via external service) [Review - Low risk]
 
 **Checkpoint**: US8 complete - dunning process runs automatically, service blocking works
@@ -294,7 +294,7 @@
 
 - [x] T100 [P] [US9] Create Credit model in backend/src/billing/models/credit.py (UUID id, account_id FK, amount, currency, reason, applied_to_invoice_id FK nullable, created_at) [FYI]
 - [x] T101 [P] [US9] Create Pydantic schemas in backend/src/billing/schemas/credit.py (CreditCreate, CreditResponse) [FYI]
-- [ ] T102 [US9] Create Alembic migration for credits table (indexes on account_id, applied_to_invoice_id) [Review - Low risk]
+- [x] T102 [US9] Create Alembic migration for credits table (indexes on account_id, applied_to_invoice_id) [Review - Low risk]
 - [x] T103 [US9] Implement CreditService in backend/src/billing/services/credit_service.py (create_credit, apply_credit_to_invoice, get_available_credits_for_account) [Review - High risk]
 - [x] T104 [US9] Integrate credit application into InvoiceService in backend/src/billing/services/invoice_service.py (auto-apply credits when generating invoice) [Review - High risk]
 - [x] T105 [US9] Implement POST /v1/credits endpoint in backend/src/billing/api/v1/credits.py [Review - Low risk]
@@ -340,7 +340,7 @@
 
 - [x] T114 [P] [US11] Create WebhookEvent model in backend/src/billing/models/webhook_event.py (UUID id, event_type, payload JSONB, endpoint_url, status enum, retry_count, created_at, delivered_at) [FYI]
 - [x] T115 [P] [US11] Create Pydantic schemas in backend/src/billing/schemas/webhook_event.py (WebhookEventResponse, WebhookEventType enum) [FYI]
-- [ ] T116 [US11] Create Alembic migration for webhook_events table (indexes on status, event_type) [Review - Low risk]
+- [x] T116 [US11] Create Alembic migration for webhook_events table (indexes on status, event_type) [Review - Low risk]
 - [x] T117 [US11] Implement WebhookService in backend/src/billing/services/webhook_service.py (send_event, retry_failed_events with exponential backoff [5 retries], filter_events_by_category) [Review - Low risk]
 - [x] T118 [US11] Implement POST /v1/webhook-endpoints endpoint in backend/src/billing/api/v1/webhook_endpoints.py (configure webhook endpoint URL) [Review - Low risk]
 - [x] T119 [US11] Implement background worker for webhook delivery in backend/src/billing/workers/webhook_delivery.py (ARQ async job for non-blocking delivery) [Review - Low risk]
