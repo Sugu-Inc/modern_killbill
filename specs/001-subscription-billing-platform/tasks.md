@@ -439,7 +439,7 @@
 
 ### Tests for US16
 
-- [ ] T143 [P] [US16] Integration test for pause/resume in backend/tests/integration/test_subscription_pause.py (test_pause_stops_billing, test_auto_resume_on_date, test_auto_cancel_after_90_days, test_usage_tracking_stops_during_pause) [FYI]
+- [x] T143 [P] [US16] Integration test for pause/resume in backend/tests/integration/test_subscription_pause.py (test_pause_stops_billing, test_auto_resume_on_date, test_auto_cancel_after_90_days, test_usage_tracking_stops_during_pause) [FYI]
 
 ### Implementation for US16
 
@@ -520,7 +520,7 @@
 - [x] T178 End-to-end test: Create subscription → Upgrade mid-cycle → Verify prorated invoice → Process payment [FYI]
 - [x] T179 End-to-end test: Create usage-based subscription → Submit usage → Generate invoice → Verify usage charges on invoice [FYI]
 - [x] Additional E2E tests: Subscription lifecycle, multi-subscription accounts (test_e2e_workflows.py)
-- [ ] T180 Load test: Verify 100 invoices/sec generation rate using Locust or k6 [FYI]
+- [x] T180 Load test: Verify 100 invoices/sec generation rate using Locust or k6 [FYI]
 
 **Checkpoint**: Platform production-ready with 99.9% uptime capability
 
