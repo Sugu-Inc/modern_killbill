@@ -387,16 +387,24 @@ async def _renew_subscription(db: AsyncSession, subscription: Subscription) -> N
     )
 
 
-async def process_auto_resume_subscriptions() -> dict[str, int]:
+async def process_auto_resume_subscriptions(db: AsyncSession | None = None) -> dict[str, int]:
     """
     Process subscriptions that should be automatically resumed.
 
     Also handles auto-cancellation for subscriptions paused > 90 days.
 
+    Args:
+        db: Optional database session (for testing). If None, creates new session.
+
     Returns:
         Dict with counts of resumed and cancelled subscriptions
     """
-    async with AsyncSessionLocal() as db:
+    # Use provided session or create new one
+    should_close_db = db is None
+    if db is None:
+        db = AsyncSessionLocal()
+
+    try:
         try:
             now = datetime.utcnow()
             ninety_days_ago = now - timedelta(days=90)
@@ -492,3 +500,7 @@ async def process_auto_resume_subscriptions() -> dict[str, int]:
                 exc_info=e,
             )
             raise
+    finally:
+        # Close session only if it was created by this function
+        if should_close_db and db is not None:
+            await db.close()
