@@ -74,3 +74,4 @@ Thumbs.db
 *.bak
 *.swp
 .~*
+dump.rdb
