@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from billing.api.deps import get_db
+from billing.api.deps import get_db, get_current_user
+from billing.auth.rbac import require_roles, Role
 from billing.models.subscription import SubscriptionStatus
 from billing.schemas.subscription import (
     Subscription,
@@ -20,9 +21,11 @@ router = APIRouter(prefix="/subscriptions", tags=["Subscriptions"])
 
 
 @router.post("", response_model=Subscription, status_code=status.HTTP_201_CREATED)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def create_subscription(
     subscription_data: SubscriptionCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Subscription:
     """
     Create a new subscription.
@@ -98,10 +101,12 @@ async def list_subscriptions(
 
 
 @router.patch("/{subscription_id}", response_model=Subscription)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def update_subscription(
     subscription_id: UUID,
     update_data: SubscriptionUpdate | SubscriptionPlanChange,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Subscription:
     """
     Update subscription or change plan.
@@ -137,10 +142,12 @@ async def update_subscription(
 
 
 @router.post("/{subscription_id}/cancel", response_model=Subscription)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def cancel_subscription(
     subscription_id: UUID,
     immediate: bool = Query(False, description="Cancel immediately or at period end"),
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Subscription:
     """
     Cancel subscription.
@@ -161,9 +168,11 @@ async def cancel_subscription(
 
 
 @router.post("/{subscription_id}/reactivate", response_model=Subscription)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def reactivate_subscription(
     subscription_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Subscription:
     """
     Reactivate a subscription scheduled for cancellation.
@@ -183,10 +192,12 @@ async def reactivate_subscription(
 
 
 @router.post("/{subscription_id}/pause", response_model=Subscription)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def pause_subscription(
     subscription_id: UUID,
     pause_data: SubscriptionPause,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Subscription:
     """
     Pause subscription.
@@ -208,9 +219,11 @@ async def pause_subscription(
 
 
 @router.post("/{subscription_id}/resume", response_model=Subscription)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def resume_subscription(
     subscription_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Subscription:
     """
     Resume a paused subscription.
@@ -229,10 +242,12 @@ async def resume_subscription(
 
 
 @router.post("/{subscription_id}/change-plan", response_model=Subscription)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def change_subscription_plan(
     subscription_id: UUID,
     plan_change: SubscriptionPlanChange,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Subscription:
     """
     Change subscription plan.

@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from billing.api.deps import get_db
+from billing.api.deps import get_db, get_current_user
+from billing.auth.rbac import require_roles, Role
 from billing.adapters.stripe_adapter import StripeAdapter
 from billing.models.account import AccountStatus
 from billing.schemas.account import Account, AccountCreate, AccountUpdate, AccountList
@@ -23,9 +24,11 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
 @router.post("", response_model=Account, status_code=status.HTTP_201_CREATED)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def create_account(
     account_data: AccountCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Account:
     """
     Create a new account.
@@ -124,9 +127,11 @@ async def update_account(
 
 
 @router.delete("/{account_id}", status_code=status.HTTP_204_NO_CONTENT)
+@require_roles(Role.SUPER_ADMIN)
 async def delete_account(
     account_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> None:
     """
     Delete account (soft delete).
@@ -147,10 +152,12 @@ async def delete_account(
 
 
 @router.post("/{account_id}/payment-methods", response_model=PaymentMethod, status_code=status.HTTP_201_CREATED)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def create_payment_method(
     account_id: UUID,
     payment_data: PaymentMethodCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> PaymentMethod:
     """
     Add payment method to account.
@@ -233,11 +240,13 @@ async def list_payment_methods(
 
 
 @router.patch("/{account_id}/payment-methods/{payment_method_id}", response_model=PaymentMethod)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def update_payment_method(
     account_id: UUID,
     payment_method_id: UUID,
     update_data: PaymentMethodUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> PaymentMethod:
     """
     Update payment method (set as default).
@@ -264,10 +273,12 @@ async def update_payment_method(
 
 
 @router.delete("/{account_id}/payment-methods/{payment_method_id}", status_code=status.HTTP_204_NO_CONTENT)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def delete_payment_method(
     account_id: UUID,
     payment_method_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> None:
     """
     Delete payment method.

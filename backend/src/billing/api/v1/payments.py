@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from billing.api.deps import get_db
+from billing.api.deps import get_db, get_current_user
+from billing.auth.rbac import require_roles, Role
 from billing.models.payment import PaymentStatus
 from billing.schemas.payment import PaymentResponse, PaymentRetryResponse
 from billing.services.payment_service import PaymentService
@@ -83,9 +84,11 @@ async def get_payment(
 
 
 @router.post("/{payment_id}/retry", response_model=PaymentResponse)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN)
 async def retry_payment(
     payment_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> PaymentResponse:
     """
     Manually retry a failed payment.

@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from billing.api.deps import get_db
+from billing.api.deps import get_db, get_current_user
+from billing.auth.rbac import require_roles, Role
 from billing.models.invoice import InvoiceStatus
 from billing.schemas.invoice import Invoice, InvoiceList, InvoiceVoid
 from billing.services.invoice_service import InvoiceService
@@ -90,10 +91,12 @@ async def get_invoice(
 
 
 @router.post("/{invoice_id}/void", response_model=Invoice)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN)
 async def void_invoice(
     invoice_id: UUID,
     void_data: InvoiceVoid,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Invoice:
     """
     Void an invoice (cancel it).

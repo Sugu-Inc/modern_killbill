@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from billing.api.deps import get_db
+from billing.api.deps import get_db, get_current_user
+from billing.auth.rbac import require_roles, Role
 from billing.schemas.plan import Plan, PlanCreate, PlanUpdate, PlanList
 from billing.services.plan_service import PlanService
 
@@ -12,9 +13,11 @@ router = APIRouter(prefix="/plans", tags=["Plans"])
 
 
 @router.post("", response_model=Plan, status_code=status.HTTP_201_CREATED)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN)
 async def create_plan(
     plan_data: PlanCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Plan:
     """
     Create a new pricing plan.
@@ -99,10 +102,12 @@ async def list_plans(
 
 
 @router.patch("/{plan_id}", response_model=Plan)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN)
 async def update_plan(
     plan_id: UUID,
     update_data: PlanUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Plan:
     """
     Update plan.
@@ -124,9 +129,11 @@ async def update_plan(
 
 
 @router.delete("/{plan_id}", status_code=status.HTTP_204_NO_CONTENT)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN)
 async def deactivate_plan(
     plan_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> None:
     """
     Deactivate plan.
@@ -145,10 +152,12 @@ async def deactivate_plan(
 
 
 @router.post("/{plan_id}/versions", response_model=Plan, status_code=status.HTTP_201_CREATED)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN)
 async def create_plan_version(
     plan_id: UUID,
     plan_data: PlanCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Plan:
     """
     Create new version of a plan.
