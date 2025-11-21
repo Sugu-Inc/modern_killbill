@@ -471,7 +471,7 @@
 - [x] T155 [P] Create AuditLog model in backend/src/billing/models/audit_log.py (entity_type, entity_id, action, user_id, changes JSONB, created_at) [Review - High risk]
 - [x] T156 Create Alembic migration for audit_logs table (indexes on entity_type, entity_id, created_at) [Review - High risk]
 - [x] T157 Implement audit logging decorator in backend/src/billing/utils/audit.py [Review - High risk]
-- [ ] T158 Apply audit logging to all create/update/delete operations in services [Review - High risk]
+- [x] T158 Apply audit logging to all create/update/delete operations in services [Review - High risk]
 
 ### Performance & Caching
 

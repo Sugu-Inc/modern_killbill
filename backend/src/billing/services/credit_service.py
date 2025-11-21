@@ -1,5 +1,6 @@
 """Service for managing account credits and refunds."""
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select, and_
@@ -9,6 +10,7 @@ from billing.models.credit import Credit
 from billing.models.account import Account
 from billing.models.invoice import Invoice, InvoiceStatus
 from billing.schemas.credit import CreditCreate, CreditBalance
+from billing.utils.audit import audit_create
 
 
 class CreditService:
@@ -18,7 +20,8 @@ class CreditService:
         """Initialize credit service with database session."""
         self.db = db
 
-    async def create_credit(self, credit_data: CreditCreate) -> Credit:
+    @audit_create("credit")
+    async def create_credit(self, credit_data: CreditCreate, current_user: Optional[dict] = None) -> Credit:
         """
         Create a new credit for an account.
 

@@ -33,7 +33,7 @@ async def create_credit(
     credit_service = CreditService(db)
 
     try:
-        credit = await credit_service.create_credit(credit_data)
+        credit = await credit_service.create_credit(credit_data, current_user=current_user)
         await db.commit()
         return credit
     except ValueError as e:

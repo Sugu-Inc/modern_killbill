@@ -41,7 +41,7 @@ async def create_account(
     service = AccountService(db)
 
     try:
-        account = await service.create_account(account_data)
+        account = await service.create_account(account_data, current_user=current_user)
         await db.commit()
         return account
     except ValueError as e:
@@ -118,7 +118,7 @@ async def update_account(
     service = AccountService(db)
 
     try:
-        account = await service.update_account(account_id, update_data)
+        account = await service.update_account(account_id, update_data, current_user=current_user)
         await db.commit()
         return account
     except ValueError as e:
@@ -141,7 +141,7 @@ async def delete_account(
     service = AccountService(db)
 
     try:
-        await service.delete_account(account_id)
+        await service.delete_account(account_id, current_user=current_user)
         await db.commit()
     except ValueError as e:
         await db.rollback()
