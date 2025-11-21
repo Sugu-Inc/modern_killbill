@@ -284,7 +284,7 @@ async def root() -> dict[str, str]:
 
 
 # Include routers
-from billing.api.v1 import health, auth, accounts, plans, subscriptions, invoices, payments, usage, credits, webhook_endpoints
+from billing.api.v1 import health, auth, accounts, plans, subscriptions, invoices, payments, usage, credits, webhook_endpoints, analytics
 from billing.api.webhooks import stripe as stripe_webhooks
 
 app.include_router(health.router, tags=["Health"])
@@ -298,7 +298,4 @@ app.include_router(usage.router, prefix="/v1", tags=["Usage"])
 app.include_router(credits.router, prefix="/v1", tags=["Credits"])
 app.include_router(webhook_endpoints.router, prefix="/v1", tags=["Webhooks"])
 app.include_router(stripe_webhooks.router, tags=["Webhooks"])
-
-# Additional routers will be added in subsequent phases
-# from billing.api.v1 import credits, analytics
-# ... other routers
+app.include_router(analytics.router, prefix="/v1", tags=["Analytics"])

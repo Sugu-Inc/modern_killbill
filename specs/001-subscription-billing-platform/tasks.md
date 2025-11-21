@@ -419,15 +419,15 @@
 
 ### Implementation for US15
 
-- [ ] T136 [P] [US15] Create AnalyticsSnapshot model in backend/src/billing/models/analytics_snapshot.py (metric_name, value, period date, metadata JSONB, created_at) [Review - Low risk]
-- [ ] T137 [US15] Create Alembic migration for analytics_snapshots table (indexes on metric_name, period) [Review - Low risk]
-- [ ] T138 [US15] Implement AnalyticsService in backend/src/billing/services/analytics_service.py (calculate_mrr, calculate_churn_rate, calculate_ltv, calculate_usage_trends) [Review - Low risk]
-- [ ] T139 [US15] Implement GET /v1/analytics/mrr endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
-- [ ] T140 [US15] Implement GET /v1/analytics/churn endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
-- [ ] T141 [US15] Implement GET /v1/analytics/ltv endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
-- [ ] T142 [US15] Implement background worker for analytics calculation in backend/src/billing/workers/analytics.py (ARQ hourly job to update snapshots) [Review - Low risk]
+- [x] T136 [P] [US15] Create AnalyticsSnapshot model in backend/src/billing/models/analytics_snapshot.py (metric_name, value, period date, metadata JSONB, created_at) [Review - Low risk]
+- [x] T137 [US15] Create Alembic migration for analytics_snapshots table (indexes on metric_name, period) [Review - Low risk]
+- [x] T138 [US15] Implement AnalyticsService in backend/src/billing/services/analytics_service.py (calculate_mrr, calculate_churn_rate, calculate_ltv, calculate_usage_trends) [Review - Low risk]
+- [x] T139 [US15] Implement GET /v1/analytics/mrr endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
+- [x] T140 [US15] Implement GET /v1/analytics/churn endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
+- [x] T141 [US15] Implement GET /v1/analytics/ltv endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
+- [x] T142 [US15] Implement background worker for analytics calculation in backend/src/billing/workers/analytics.py (ARQ hourly job to update snapshots) [Review - Low risk]
 
-**Checkpoint**: US15 complete - analytics metrics auto-calculate and available via API
+**Checkpoint**: US15 complete ✅ - analytics metrics auto-calculate and available via API
 
 ---
 
