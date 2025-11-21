@@ -1,0 +1,69 @@
+# Example Terraform variables configuration
+# Copy this file to terraform.tfvars and customize for your deployment
+
+# General Configuration
+aws_region   = "us-east-1"
+environment  = "production"
+project_name = "billing-platform"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+
+# RDS PostgreSQL Configuration
+db_instance_class         = "db.t3.medium"  # For production: db.r6g.xlarge or larger
+db_allocated_storage      = 100
+db_max_allocated_storage  = 500
+db_name                   = "billing"
+db_username               = "billing_admin"
+db_password               = "CHANGE-ME-USE-STRONG-PASSWORD"  # Use environment variable: TF_VAR_db_password
+db_multi_az               = true  # Set to false for staging/dev
+db_backup_retention_days  = 30    # Set to 7 for staging, 1 for dev
+
+# ElastiCache Redis Configuration
+redis_node_type          = "cache.t3.medium"  # For production: cache.r6g.large or larger
+redis_num_cache_nodes    = 2                   # Set to 1 for staging/dev
+redis_snapshot_retention = 7                   # Set to 1 for staging/dev
+
+# ECS Configuration
+app_cpu           = "1024"  # 1 vCPU (1024 = 1 vCPU, 2048 = 2 vCPU)
+app_memory        = "2048"  # 2 GB
+app_desired_count = 2       # Set to 1 for staging/dev
+app_min_count     = 2       # Minimum tasks for autoscaling
+app_max_count     = 10      # Maximum tasks for autoscaling
+
+# ECR Configuration
+ecr_repository_url = "123456789012.dkr.ecr.us-east-1.amazonaws.com/billing-platform"
+app_image_tag      = "v1.0.0"  # Or use commit SHA, e.g., "abc123def"
+
+# ACM Certificate (must be created beforehand)
+acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+
+# ALB Configuration
+alb_deletion_protection = true  # Set to false for staging/dev
+
+# CloudWatch Configuration
+log_retention_days = 30  # Set to 7 for staging, 3 for dev
+
+# Environment-specific examples:
+# ==========================
+
+# Production:
+# db_instance_class = "db.r6g.xlarge"
+# db_multi_az = true
+# redis_node_type = "cache.r6g.large"
+# app_desired_count = 4
+# alb_deletion_protection = true
+
+# Staging:
+# db_instance_class = "db.t3.medium"
+# db_multi_az = false
+# redis_node_type = "cache.t3.small"
+# app_desired_count = 1
+# alb_deletion_protection = false
+
+# Development:
+# db_instance_class = "db.t3.small"
+# db_multi_az = false
+# redis_node_type = "cache.t3.micro"
+# app_desired_count = 1
+# alb_deletion_protection = false
