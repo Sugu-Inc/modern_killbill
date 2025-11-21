@@ -14,6 +14,8 @@ from stripe.error import StripeError
 from billing.config import settings
 from billing.middleware.logging import setup_logging
 from billing.middleware.metrics import MetricsMiddleware
+from billing.middleware.security_headers import SecurityHeadersMiddleware
+from billing.middleware.security_monitor import SecurityEventMonitor
 
 # Setup structured logging
 setup_logging()
@@ -52,6 +54,12 @@ app.add_middleware(
 
 # Add metrics middleware
 app.add_middleware(MetricsMiddleware)
+
+# Add security headers middleware (OWASP best practices)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Add security event monitoring (SOC2 CC7.2 compliance)
+app.add_middleware(SecurityEventMonitor)
 
 # Mount Prometheus metrics endpoint
 metrics_app = make_asgi_app()
@@ -276,10 +284,11 @@ async def root() -> dict[str, str]:
 
 
 # Include routers
-from billing.api.v1 import health, accounts, plans, subscriptions, invoices, payments, usage, credits, webhook_endpoints
+from billing.api.v1 import health, auth, accounts, plans, subscriptions, invoices, payments, usage, credits, webhook_endpoints
 from billing.api.webhooks import stripe as stripe_webhooks
 
 app.include_router(health.router, tags=["Health"])
+app.include_router(auth.router, prefix="/v1", tags=["Authentication"])
 app.include_router(accounts.router, prefix="/v1", tags=["Accounts"])
 app.include_router(plans.router, prefix="/v1", tags=["Plans"])
 app.include_router(subscriptions.router, prefix="/v1", tags=["Subscriptions"])

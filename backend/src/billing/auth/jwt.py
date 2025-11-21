@@ -22,7 +22,7 @@ class JWTAuth:
     def __init__(self):
         """Initialize JWT auth with RSA key pair."""
         self.algorithm = "RS256"
-        self.access_token_expire_minutes = 60  # 1 hour
+        self.access_token_expire_minutes = 15  # 15 minutes (SOC2 compliance)
         self.refresh_token_expire_days = 7  # 7 days
 
         # In production, load these from secure storage (e.g., AWS Secrets Manager, HashiCorp Vault)
