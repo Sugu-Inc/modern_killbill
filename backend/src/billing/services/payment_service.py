@@ -134,10 +134,8 @@ class PaymentService:
         try:
             # For testing purposes without Stripe integration, simulate payment
             # In real implementation, this would call Stripe API
-            # For now, mark as PENDING and return
-            # The actual charging happens through webhooks or background workers
 
-            # If no payment method (testing mode), succeed immediately
+            # If no payment method (testing/mock mode), succeed immediately
             if not payment_method_id:
                 payment.status = PaymentStatus.SUCCEEDED
                 payment.gateway_transaction_id = f"test_{uuid4()}"

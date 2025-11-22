@@ -92,12 +92,11 @@ class InvoiceService:
 
         # Base subscription charge
         plan = subscription.plan
-        base_amount = plan.amount * subscription.quantity
 
         line_items.append(
             InvoiceLineItem(
                 description=f"{plan.name} ({period_start.strftime('%Y-%m-%d')} - {period_end.strftime('%Y-%m-%d')})",
-                amount=base_amount,
+                amount=plan.amount,  # Per-unit price
                 quantity=subscription.quantity,
                 type="subscription",
             ).model_dump()
@@ -549,7 +548,7 @@ class InvoiceService:
         )
         payment_method = payment_method_result.scalar_one_or_none()
 
-        # Only attempt payment if a payment method exists
+        # Only auto-attempt payment if a payment method exists
         # If no payment method, invoice stays OPEN for manual payment
         if not payment_method:
             return
