@@ -605,13 +605,18 @@ class InvoiceService:
         )
         payment_method = payment_method_result.scalar_one_or_none()
 
+        # Only attempt payment if a payment method exists
+        # If no payment method, invoice stays OPEN for manual payment
+        if not payment_method:
+            return
+
         # Create payment service and attempt payment
         payment_service = PaymentService(self.db)
 
         try:
             await payment_service.attempt_payment(
                 invoice_id=invoice.id,
-                payment_method_id=payment_method.id if payment_method else None,
+                payment_method_id=payment_method.id,
             )
         except Exception:
             # Payment attempt failed, but invoice is still created

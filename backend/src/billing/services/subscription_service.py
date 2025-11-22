@@ -424,6 +424,10 @@ class SubscriptionService:
         if not subscription:
             raise ValueError(f"Subscription {subscription_id} not found")
 
+        # Cannot change plan on paused subscriptions
+        if subscription.status == SubscriptionStatus.PAUSED:
+            raise ValueError("Cannot change plan for paused subscription")
+
         # Verify new plan exists and is active
         plan_result = await self.db.execute(
             select(Plan).where(Plan.id == plan_change.new_plan_id)

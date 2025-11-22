@@ -45,7 +45,7 @@ class UsageService:
             # Idempotency: return existing record
             return existing_record
 
-        # Verify subscription exists
+        # Verify subscription exists and is active
         subscription_result = await self.db.execute(
             select(Subscription).where(Subscription.id == usage_data.subscription_id)
         )
@@ -53,6 +53,11 @@ class UsageService:
 
         if not subscription:
             raise ValueError(f"Subscription {usage_data.subscription_id} not found")
+
+        # Check if subscription is paused or inactive
+        from billing.models.subscription import SubscriptionStatus
+        if subscription.status in [SubscriptionStatus.PAUSED, SubscriptionStatus.CANCELLED]:
+            raise ValueError(f"Cannot record usage for paused or inactive subscription")
 
         # Create new usage record
         usage_record = UsageRecord(
@@ -212,8 +217,8 @@ class UsageService:
         """
         Process late usage events and generate supplemental invoice.
 
-        Late usage: events that arrive after the billing period has closed
-        but within the 7-day grace window.
+        Late usage: events that arrive after an invoice has already been
+        generated for their billing period.
 
         Args:
             subscription_id: Subscription UUID
@@ -232,22 +237,39 @@ class UsageService:
         if not subscription:
             raise ValueError(f"Subscription {subscription_id} not found")
 
-        # Find usage events after the current period end but before grace period expires
-        period_end = subscription.current_period_end
-        grace_period_end = period_end + timedelta(days=7)
-        now = datetime.utcnow()
+        # Find the most recent invoice for this subscription
+        invoice_result = await self.db.execute(
+            select(Invoice)
+            .where(
+                Invoice.subscription_id == subscription_id,
+                Invoice.status != InvoiceStatus.VOID,
+            )
+            .order_by(Invoice.created_at.desc())
+            .limit(1)
+        )
+        latest_invoice = invoice_result.scalar_one_or_none()
 
-        # Check if we're within grace period
-        if now > grace_period_end:
-            return None
+        if not latest_invoice:
+            return None  # No invoice to compare against
 
-        # Find late usage events
+        # Get the period from invoice metadata
+        period_start_str = latest_invoice.extra_metadata.get("period_start")
+        period_end_str = latest_invoice.extra_metadata.get("period_end")
+
+        if not period_start_str or not period_end_str:
+            return None  # Invoice doesn't have period metadata
+
+        period_start = datetime.fromisoformat(period_start_str)
+        period_end = datetime.fromisoformat(period_end_str)
+
+        # Find usage events with timestamp in the invoiced period but created after the invoice
         late_usage_result = await self.db.execute(
             select(UsageRecord)
             .where(
                 UsageRecord.subscription_id == subscription_id,
-                UsageRecord.timestamp < period_end,  # Usage occurred in closed period
-                UsageRecord.created_at >= period_end,  # But recorded after period closed
+                UsageRecord.timestamp >= period_start,
+                UsageRecord.timestamp < period_end,
+                UsageRecord.created_at > latest_invoice.created_at,
             )
         )
         late_usage_records = list(late_usage_result.scalars().all())
@@ -289,6 +311,7 @@ class UsageService:
 
         # Generate supplemental invoice
         invoice_number = await invoice_service.generate_invoice_number()
+        now = datetime.utcnow()
 
         supplemental_invoice = Invoice(
             account_id=subscription.account_id,
