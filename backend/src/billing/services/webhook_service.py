@@ -369,3 +369,43 @@ class WebhookService:
         events = list(result.scalars().all())
 
         return events, total
+
+    async def list_events_for_account(
+        self,
+        account_id: UUID,
+        page: int = 1,
+        page_size: int = 50,
+    ) -> tuple[list[WebhookEvent], int]:
+        """
+        List all webhook events for an account.
+
+        Searches for events where the payload contains the account_id.
+
+        Args:
+            account_id: Account UUID
+            page: Page number (1-indexed)
+            page_size: Items per page
+
+        Returns:
+            Tuple of (events list, total count)
+        """
+        account_id_str = str(account_id)
+
+        # Search for events where payload contains account_id
+        query = select(WebhookEvent).where(
+            WebhookEvent.payload.op("@>")({f"account_id": account_id_str})
+        )
+
+        # Count total
+        count_result = await self.db.execute(query)
+        total = len(list(count_result.scalars().all()))
+
+        # Get paginated results
+        query = select(WebhookEvent).where(
+            WebhookEvent.payload.op("@>")({f"account_id": account_id_str})
+        ).order_by(WebhookEvent.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+
+        result = await self.db.execute(query)
+        events = list(result.scalars().all())
+
+        return events, total

@@ -16,9 +16,11 @@ from billing.schemas.payment_method import (
     PaymentMethodUpdate,
 )
 from billing.schemas.credit import Credit, CreditList, CreditBalance
+from billing.schemas.webhook_event import WebhookEventList
 from billing.services.account_service import AccountService
 from billing.services.payment_method_service import PaymentMethodService
 from billing.services.credit_service import CreditService
+from billing.services.webhook_service import WebhookService
 from billing.cache import cache, cache_key
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
@@ -406,3 +408,43 @@ async def get_account_credit_balance(
     )
 
     return balance
+
+
+@router.get("/{account_id}/webhook-events", response_model=WebhookEventList)
+async def list_account_webhook_events(
+    account_id: UUID,
+    page: int = 1,
+    page_size: int = 50,
+    db: AsyncSession = Depends(get_db),
+) -> WebhookEventList:
+    """
+    List webhook events for an account.
+
+    Returns all webhook events related to this account across all resources
+    (invoices, payments, subscriptions, etc.).
+
+    - **page**: Page number (1-indexed, default: 1)
+    - **page_size**: Items per page (default: 50)
+    """
+    # Verify account exists
+    account_service = AccountService(db)
+    account = await account_service.get_account(account_id)
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account {account_id} not found",
+        )
+
+    webhook_service = WebhookService(db)
+    events, total = await webhook_service.list_events_for_account(
+        account_id=account_id,
+        page=page,
+        page_size=page_size,
+    )
+
+    return WebhookEventList(
+        items=events,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )

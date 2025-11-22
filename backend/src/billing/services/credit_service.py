@@ -317,11 +317,11 @@ class CreditService:
         count_result = await self.db.execute(count_query)
         total = len(list(count_result.scalars().all()))
 
-        # Get paginated results
+        # Get paginated results (ordered by creation time, oldest first for FIFO credit application)
         query = (
             select(Credit)
             .where(and_(*conditions))
-            .order_by(Credit.created_at.desc())
+            .order_by(Credit.created_at.asc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )

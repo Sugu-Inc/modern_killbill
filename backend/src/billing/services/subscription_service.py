@@ -579,12 +579,6 @@ class SubscriptionService:
             from billing.services.webhook_service import WebhookService
             from billing.api.v1.webhook_endpoints import get_endpoints_for_event
 
-            # Get webhook endpoints subscribed to this event
-            endpoints = get_endpoints_for_event(event_type)
-
-            if not endpoints:
-                return  # No subscribers
-
             webhook_service = WebhookService(self.db)
 
             # Create webhook payload
@@ -598,13 +592,25 @@ class SubscriptionService:
                 "current_period_end": subscription.current_period_end.isoformat() if subscription.current_period_end else None,
             }
 
-            # Create webhook event for each subscribed endpoint
-            for endpoint_url in endpoints:
+            # Get webhook endpoints subscribed to this event
+            endpoints = get_endpoints_for_event(event_type)
+
+            # Create webhook event for each subscribed endpoint, or one with "system" endpoint if none
+            if not endpoints:
+                # Create event with system endpoint for audit trail
                 await webhook_service.create_event(
                     event_type=event_type,
                     payload=payload,
-                    endpoint_url=endpoint_url,
+                    endpoint_url="system",
                 )
+            else:
+                # Create webhook event for each subscribed endpoint
+                for endpoint_url in endpoints:
+                    await webhook_service.create_event(
+                        event_type=event_type,
+                        payload=payload,
+                        endpoint_url=endpoint_url,
+                    )
 
         except Exception:
             # Don't let webhook failures break subscription operations
