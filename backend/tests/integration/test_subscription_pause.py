@@ -316,7 +316,7 @@ async def test_pause_with_pending_invoice(async_db, test_account, test_plan):
     When: Subscription is paused
     Then: Existing invoice remains due, but no new invoices generated
     """
-    # Create subscription (generates first invoice)
+    # Create subscription
     subscription_service = SubscriptionService(async_db)
     subscription = await subscription_service.create_subscription(
         SubscriptionCreate(
@@ -328,12 +328,11 @@ async def test_pause_with_pending_invoice(async_db, test_account, test_plan):
     await async_db.commit()
     await async_db.refresh(subscription)
 
-    # Get the initial invoice
-    stmt = select(Invoice).where(
-        Invoice.subscription_id == subscription.id
-    )
-    result = await async_db.execute(stmt)
-    initial_invoice = result.scalars().first()
+    # Generate initial invoice
+    from billing.services.invoice_service import InvoiceService
+    invoice_service = InvoiceService(async_db)
+    initial_invoice = await invoice_service.generate_invoice_for_subscription(subscription.id)
+    await async_db.commit()
 
     assert initial_invoice is not None
     invoice_count_before_pause = 1

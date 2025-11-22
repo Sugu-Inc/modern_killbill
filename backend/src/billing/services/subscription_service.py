@@ -307,6 +307,7 @@ class SubscriptionService:
         old_status = subscription.status
         subscription.status = SubscriptionStatus.PAUSED
         subscription.pause_resumes_at = pause_data.resumes_at
+        subscription.paused_at = datetime.utcnow()  # Track when pause started for billing cycle extension
 
         await self._create_history(
             subscription_id,
@@ -341,6 +342,22 @@ class SubscriptionService:
 
         old_status = subscription.status
         subscription.status = SubscriptionStatus.ACTIVE
+
+        # Extend billing cycle by pause duration (calculate before clearing pause fields)
+        if subscription.paused_at:
+            # Calculate pause duration - use scheduled resume date if available, otherwise actual duration
+            now = datetime.utcnow()
+            if subscription.pause_resumes_at and subscription.pause_resumes_at > subscription.paused_at:
+                # Use the scheduled duration (handles case where user manually resumes before scheduled date)
+                pause_duration = subscription.pause_resumes_at - subscription.paused_at
+            else:
+                # No scheduled resume or already past it - use actual pause duration
+                pause_duration = now - subscription.paused_at
+
+            subscription.current_period_end = subscription.current_period_end + pause_duration
+
+        # Clear pause tracking fields
+        subscription.paused_at = None
         subscription.pause_resumes_at = None
 
         await self._create_history(
