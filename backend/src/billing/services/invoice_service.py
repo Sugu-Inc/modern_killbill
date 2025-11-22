@@ -6,6 +6,7 @@ from decimal import Decimal
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import flag_modified
 
 from billing.models.invoice import Invoice, InvoiceStatus
 from billing.models.subscription import Subscription, SubscriptionStatus
@@ -682,24 +683,17 @@ class InvoiceService:
         if invoice.status == InvoiceStatus.VOID:
             raise ValueError(f"Invoice {invoice_id} is already voided")
 
+        if invoice.status == InvoiceStatus.PAID:
+            raise ValueError(f"Cannot void paid invoice {invoice_id}. Issue a refund credit instead.")
+
         original_status = invoice.status
 
         # Void the invoice
         invoice.status = InvoiceStatus.VOID
+        invoice.voided_at = datetime.utcnow()
         invoice.extra_metadata["void_reason"] = reason
-        invoice.extra_metadata["voided_at"] = datetime.utcnow().isoformat()
         invoice.extra_metadata["original_status"] = original_status.value
-
-        # If invoice was paid, create a refund credit
-        if original_status == InvoiceStatus.PAID and invoice.amount_paid > 0:
-            from billing.services.credit_service import CreditService
-
-            credit_service = CreditService(self.db)
-            await credit_service.create_refund_credit(
-                invoice_id=invoice.id,
-                amount=invoice.amount_paid,
-                reason=f"Refund from voided invoice #{invoice.number}: {reason}",
-            )
+        flag_modified(invoice, "extra_metadata")
 
         await self.db.flush()
         await self.db.refresh(invoice)
