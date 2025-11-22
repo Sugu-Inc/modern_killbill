@@ -74,10 +74,13 @@ async def get_plan(
             detail=f"Plan {plan_id} not found",
         )
 
-    # Cache for 5 minutes
-    await cache.set(cache_key_str, plan.model_dump(), ttl=300)
+    # Convert SQLAlchemy model to Pydantic schema
+    plan_schema = Plan.model_validate(plan)
 
-    return plan
+    # Cache for 5 minutes
+    await cache.set(cache_key_str, plan_schema.model_dump(), ttl=300)
+
+    return plan_schema
 
 
 @router.get("", response_model=PlanList)

@@ -79,10 +79,13 @@ async def get_account(
             detail=f"Account {account_id} not found",
         )
 
-    # Cache for 5 minutes
-    await cache.set(cache_key_str, account.model_dump(), ttl=300)
+    # Convert SQLAlchemy model to Pydantic schema
+    account_schema = Account.model_validate(account)
 
-    return account
+    # Cache for 5 minutes
+    await cache.set(cache_key_str, account_schema.model_dump(), ttl=300)
+
+    return account_schema
 
 
 @router.get("", response_model=AccountList)
