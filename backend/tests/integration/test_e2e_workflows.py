@@ -287,25 +287,26 @@ async def test_e2e_usage_based_billing(db_session: AsyncSession) -> None:
     assert subscription.status == SubscriptionStatus.ACTIVE
 
     # Step 4: Submit usage records
-    from billing.models.usage import Usage
+    from billing.models.usage_record import UsageRecord
+    from uuid import uuid4
 
     # Submit 100 API calls
-    usage1 = Usage(
+    usage1 = UsageRecord(
         subscription_id=subscription.id,
-        account_id=account.id,
         metric="api_calls",
         quantity=100,
         timestamp=datetime.utcnow(),
+        idempotency_key=f"usage-{uuid4()}",
     )
     db_session.add(usage1)
 
     # Submit 5000 storage GB-hours
-    usage2 = Usage(
+    usage2 = UsageRecord(
         subscription_id=subscription.id,
-        account_id=account.id,
         metric="storage_gb_hours",
         quantity=5000,
         timestamp=datetime.utcnow(),
+        idempotency_key=f"usage-{uuid4()}",
     )
     db_session.add(usage2)
     await db_session.flush()
@@ -376,8 +377,8 @@ async def test_e2e_subscription_lifecycle(db_session: AsyncSession) -> None:
     await db_session.commit()
 
     # Verify cancelled
-    assert cancelled.status == SubscriptionStatus.CANCELED
-    assert cancelled.canceled_at is not None
+    assert cancelled.status == SubscriptionStatus.CANCELLED
+    assert cancelled.cancelled_at is not None
 
 
 @pytest.mark.asyncio
@@ -448,5 +449,10 @@ async def test_e2e_multi_subscription_account(db_session: AsyncSession) -> None:
     assert inv3.subtotal == 3000
 
     # Account should have 3 invoices
-    await db_session.refresh(account)
-    assert len(account.invoices) >= 3
+    from sqlalchemy import select, func
+    from billing.models.invoice import Invoice
+
+    invoices_count = await db_session.scalar(
+        select(func.count()).select_from(Invoice).where(Invoice.account_id == account.id)
+    )
+    assert invoices_count >= 3
