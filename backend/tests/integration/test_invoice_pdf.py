@@ -28,7 +28,7 @@ async def test_generate_invoice_pdf(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Premium Plan",
-        price=5000,  # $50.00
+        amount=5000,  # $50.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -80,7 +80,7 @@ async def test_pdf_includes_invoice_details(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Business Plan",
-        price=10000,  # $100.00
+        amount=10000,  # $100.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -131,7 +131,7 @@ async def test_pdf_with_branding(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Starter Plan",
-        price=2500,  # $25.00
+        amount=2500,  # $25.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -182,7 +182,7 @@ async def test_pdf_multi_currency_formatting(db_session: AsyncSession) -> None:
 
     plan_eur = Plan(
         name="Euro Plan",
-        price=7500,  # €75.00
+        amount=7500,  # €75.00
         currency="EUR",
         interval=PlanInterval.MONTH,
         active=True,
@@ -231,7 +231,7 @@ async def test_pdf_with_tax_breakdown(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Taxable Plan",
-        price=10000,  # $100.00
+        amount=10000,  # $100.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -283,7 +283,7 @@ async def test_pdf_with_line_items(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Multi-Item Plan",
-        price=3000,  # $30.00
+        amount=3000,  # $30.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -335,7 +335,7 @@ async def test_pdf_generation_error_handling(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Test Plan",
-        price=1000,
+        amount=1000,
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,

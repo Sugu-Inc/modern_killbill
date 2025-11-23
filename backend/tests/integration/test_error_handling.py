@@ -4,16 +4,12 @@ from uuid import uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.testclient import TestClient
 
-from billing.main import app
 from billing.models.account import Account
 from billing.models.plan import Plan, PlanInterval
 
 
-client = TestClient(app)
-
-
 @pytest.mark.asyncio
-async def test_validation_error_invalid_email(db_session: AsyncSession) -> None:
+async def test_validation_error_invalid_email(db_session: AsyncSession, client: TestClient) -> None:
     """Test that invalid email returns proper validation error."""
     response = client.post(
         "/v1/accounts",
@@ -33,7 +29,7 @@ async def test_validation_error_invalid_email(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_validation_error_invalid_currency(db_session: AsyncSession) -> None:
+async def test_validation_error_invalid_currency(db_session: AsyncSession, client: TestClient) -> None:
     """Test that invalid currency code returns validation error."""
     response = client.post(
         "/v1/accounts",
@@ -49,7 +45,7 @@ async def test_validation_error_invalid_currency(db_session: AsyncSession) -> No
 
 
 @pytest.mark.asyncio
-async def test_not_found_error_account(db_session: AsyncSession) -> None:
+async def test_not_found_error_account(db_session: AsyncSession, client: TestClient) -> None:
     """Test that accessing non-existent account returns 404."""
     non_existent_id = uuid4()
 
@@ -61,7 +57,7 @@ async def test_not_found_error_account(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_not_found_error_invoice(db_session: AsyncSession) -> None:
+async def test_not_found_error_invoice(db_session: AsyncSession, client: TestClient) -> None:
     """Test that accessing non-existent invoice returns 404."""
     non_existent_id = uuid4()
 
@@ -86,7 +82,7 @@ async def test_business_logic_error_void_paid_invoice(db_session: AsyncSession) 
 
 
 @pytest.mark.asyncio
-async def test_validation_error_negative_amount(db_session: AsyncSession) -> None:
+async def test_validation_error_negative_amount(db_session: AsyncSession, client: TestClient) -> None:
     """Test that negative amounts are rejected."""
     # Create account first
     account = Account(
@@ -103,7 +99,7 @@ async def test_validation_error_negative_amount(db_session: AsyncSession) -> Non
         "/v1/plans",
         json={
             "name": "Negative Plan",
-            "price": -1000,  # Negative price should be rejected
+            "amount": -1000,  # Negative amount should be rejected
             "currency": "USD",
             "interval": "month",
         },
@@ -154,7 +150,7 @@ async def test_rate_limit_error_structure(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_error_response_includes_request_id(db_session: AsyncSession) -> None:
+async def test_error_response_includes_request_id(db_session: AsyncSession, client: TestClient) -> None:
     """Test that error responses include request ID for tracing."""
     non_existent_id = uuid4()
     response = client.get(f"/v1/accounts/{non_existent_id}")
@@ -185,7 +181,7 @@ async def test_stripe_api_error_handling(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_validation_multiple_errors(db_session: AsyncSession) -> None:
+async def test_validation_multiple_errors(db_session: AsyncSession, client: TestClient) -> None:
     """Test that multiple validation errors are all returned."""
     response = client.post(
         "/v1/accounts",
@@ -205,7 +201,7 @@ async def test_validation_multiple_errors(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_missing_required_field(db_session: AsyncSession) -> None:
+async def test_missing_required_field(db_session: AsyncSession, client: TestClient) -> None:
     """Test that missing required fields return validation error."""
     response = client.post(
         "/v1/accounts",
@@ -221,13 +217,13 @@ async def test_missing_required_field(db_session: AsyncSession) -> None:
 
 
 @pytest.mark.asyncio
-async def test_invalid_enum_value(db_session: AsyncSession) -> None:
+async def test_invalid_enum_value(db_session: AsyncSession, client: TestClient) -> None:
     """Test that invalid enum values return validation error."""
     response = client.post(
         "/v1/plans",
         json={
             "name": "Test Plan",
-            "price": 1000,
+            "amount": 1000,
             "currency": "USD",
             "interval": "invalid_interval",  # Should be "day", "week", "month", or "year"
         },

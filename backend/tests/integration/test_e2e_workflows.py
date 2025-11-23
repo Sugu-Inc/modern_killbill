@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from billing.models.account import Account
-from billing.models.plan import Plan, PlanInterval
+from billing.models.plan import Plan, PlanInterval, UsageType
 from billing.models.payment_method import PaymentMethod
 from billing.models.subscription import SubscriptionStatus
 from billing.models.invoice import InvoiceStatus
@@ -269,7 +269,7 @@ async def test_e2e_usage_based_billing(db_session: AsyncSession) -> None:
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
-        usage_based=True,  # Usage-based plan
+        usage_type=UsageType.METERED,  # Usage-based plan
     )
     db_session.add(usage_plan)
     await db_session.flush()
@@ -371,7 +371,7 @@ async def test_e2e_subscription_lifecycle(db_session: AsyncSession) -> None:
     # Cancel subscription
     cancelled = await subscription_service.cancel_subscription(
         subscription_id=subscription.id,
-        cancel_at_period_end=False,
+        immediate=True,
     )
     await db_session.commit()
 
@@ -426,8 +426,12 @@ async def test_e2e_multi_subscription_account(db_session: AsyncSession) -> None:
     assert sub3.status == SubscriptionStatus.ACTIVE
 
     # Verify account has all subscriptions
-    await db_session.refresh(account)
-    assert len(account.subscriptions) == 3
+    from sqlalchemy import select, func
+    from billing.models.subscription import Subscription
+    subscriptions_count = await db_session.scalar(
+        select(func.count()).select_from(Subscription).where(Subscription.account_id == account.id)
+    )
+    assert subscriptions_count == 3
 
     # Generate invoices for each
     invoice_service = InvoiceService(db_session)
