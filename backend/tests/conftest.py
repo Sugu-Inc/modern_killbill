@@ -122,6 +122,17 @@ def client() -> Generator[TestClient, None, None]:
         TestClient: Synchronous test client for FastAPI with test database
     """
     from billing.api.deps import get_db, get_current_user
+    import asyncio
+
+    # Clean up any lingering async connections BEFORE setting up sync client
+    # This prevents event loop conflicts when this test runs after async tests
+    cleanup_loop = asyncio.new_event_loop()
+    try:
+        cleanup_loop.run_until_complete(test_engine.dispose())
+    except Exception:
+        pass
+    finally:
+        cleanup_loop.close()
 
     # Setup database tables using sync engine (avoids event loop conflicts)
     _sync_setup_test_db()
