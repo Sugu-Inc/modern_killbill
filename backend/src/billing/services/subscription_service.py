@@ -307,6 +307,7 @@ class SubscriptionService:
         old_status = subscription.status
         subscription.status = SubscriptionStatus.PAUSED
         subscription.pause_resumes_at = pause_data.resumes_at
+        subscription.paused_at = datetime.utcnow()  # Track when pause started for billing cycle extension
 
         await self._create_history(
             subscription_id,
@@ -341,6 +342,22 @@ class SubscriptionService:
 
         old_status = subscription.status
         subscription.status = SubscriptionStatus.ACTIVE
+
+        # Extend billing cycle by pause duration (calculate before clearing pause fields)
+        if subscription.paused_at:
+            # Calculate pause duration - use scheduled resume date if available, otherwise actual duration
+            now = datetime.utcnow()
+            if subscription.pause_resumes_at and subscription.pause_resumes_at > subscription.paused_at:
+                # Use the scheduled duration (handles case where user manually resumes before scheduled date)
+                pause_duration = subscription.pause_resumes_at - subscription.paused_at
+            else:
+                # No scheduled resume or already past it - use actual pause duration
+                pause_duration = now - subscription.paused_at
+
+            subscription.current_period_end = subscription.current_period_end + pause_duration
+
+        # Clear pause tracking fields
+        subscription.paused_at = None
         subscription.pause_resumes_at = None
 
         await self._create_history(
@@ -353,6 +370,50 @@ class SubscriptionService:
         await self.db.flush()
         await self.db.refresh(subscription)
         return subscription
+
+    async def cancel_long_paused_subscriptions(self) -> int:
+        """
+        Cancel subscriptions that have been paused for more than 90 days.
+
+        Returns:
+            Number of subscriptions cancelled
+
+        Note:
+            This is typically called by a background worker.
+        """
+        from datetime import datetime, timedelta
+
+        ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+
+        # Find paused subscriptions older than 90 days
+        result = await self.db.execute(
+            select(Subscription).where(
+                Subscription.status == SubscriptionStatus.PAUSED,
+                Subscription.updated_at <= ninety_days_ago
+            )
+        )
+        long_paused = result.scalars().all()
+
+        cancelled_count = 0
+        for subscription in long_paused:
+            # Cancel the subscription
+            old_status = subscription.status
+            subscription.status = SubscriptionStatus.CANCELLED
+            subscription.cancelled_at = datetime.utcnow()
+
+            await self._create_history(
+                subscription.id,
+                "auto_cancelled_long_pause",
+                old_status.value,
+                SubscriptionStatus.CANCELLED.value,
+            )
+
+            cancelled_count += 1
+
+        if cancelled_count > 0:
+            await self.db.flush()
+
+        return cancelled_count
 
     async def change_plan(
         self, subscription_id: UUID, plan_change: SubscriptionPlanChange
@@ -379,6 +440,10 @@ class SubscriptionService:
         subscription = result.scalar_one_or_none()
         if not subscription:
             raise ValueError(f"Subscription {subscription_id} not found")
+
+        # Cannot change plan on paused subscriptions
+        if subscription.status == SubscriptionStatus.PAUSED:
+            raise ValueError("Cannot change plan for paused subscription")
 
         # Verify new plan exists and is active
         plan_result = await self.db.execute(
@@ -514,12 +579,6 @@ class SubscriptionService:
             from billing.services.webhook_service import WebhookService
             from billing.api.v1.webhook_endpoints import get_endpoints_for_event
 
-            # Get webhook endpoints subscribed to this event
-            endpoints = get_endpoints_for_event(event_type)
-
-            if not endpoints:
-                return  # No subscribers
-
             webhook_service = WebhookService(self.db)
 
             # Create webhook payload
@@ -533,13 +592,25 @@ class SubscriptionService:
                 "current_period_end": subscription.current_period_end.isoformat() if subscription.current_period_end else None,
             }
 
-            # Create webhook event for each subscribed endpoint
-            for endpoint_url in endpoints:
+            # Get webhook endpoints subscribed to this event
+            endpoints = get_endpoints_for_event(event_type)
+
+            # Create webhook event for each subscribed endpoint, or one with "system" endpoint if none
+            if not endpoints:
+                # Create event with system endpoint for audit trail
                 await webhook_service.create_event(
                     event_type=event_type,
                     payload=payload,
-                    endpoint_url=endpoint_url,
+                    endpoint_url="system",
                 )
+            else:
+                # Create webhook event for each subscribed endpoint
+                for endpoint_url in endpoints:
+                    await webhook_service.create_event(
+                        event_type=event_type,
+                        payload=payload,
+                        endpoint_url=endpoint_url,
+                    )
 
         except Exception:
             # Don't let webhook failures break subscription operations

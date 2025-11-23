@@ -29,6 +29,20 @@ async def test_auto_attempt_payment_on_invoice_creation(db_session: AsyncSession
     )
     await db_session.commit()
 
+    # Add payment method to account for auto-payment
+    from billing.models.payment_method import PaymentMethod
+    payment_method = PaymentMethod(
+        account_id=account.id,
+        gateway_payment_method_id="pm_test_autopay",
+        type="card",
+        card_last4="4242",
+        card_exp_month="12",
+        card_exp_year="2025",
+        is_default=True,
+    )
+    db_session.add(payment_method)
+    await db_session.commit()
+
     # Create plan and subscription
     plan_service = PlanService(db_session)
     plan = await plan_service.create_plan(

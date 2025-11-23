@@ -39,12 +39,12 @@ async def test_e2e_full_billing_flow(db_session: AsyncSession) -> None:
     # Step 2: Add payment method
     payment_method = PaymentMethod(
         account_id=account.id,
-        stripe_payment_method_id="pm_test_card_visa",
+        gateway_payment_method_id="pm_test_card_visa",
         type="card",
-        last4="4242",
-        brand="visa",
-        exp_month=12,
-        exp_year=2025,
+        card_last4="4242",
+        card_brand="visa",
+        card_exp_month="12",
+        card_exp_year="2025",
         is_default=True,
     )
     db_session.add(payment_method)
@@ -53,7 +53,7 @@ async def test_e2e_full_billing_flow(db_session: AsyncSession) -> None:
     # Step 3: Create plan
     plan = Plan(
         name="E2E Test Plan",
-        price=2000,  # $20.00
+        amount=2000,  # $20.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -92,16 +92,11 @@ async def test_e2e_full_billing_flow(db_session: AsyncSession) -> None:
 
     # Step 6: Process payment
     payment_service = PaymentService(db_session)
-    payment_data = PaymentCreate(
-        invoice_id=invoice.id,
-        payment_method_id=payment_method.id,
-        amount=invoice.amount_due,
-    )
 
     # Note: In real scenario, this would call Stripe API
     # For test, we'll create payment record directly
     try:
-        payment = await payment_service.create_payment_for_invoice(
+        payment = await payment_service.attempt_payment(
             invoice_id=invoice.id,
             payment_method_id=payment_method.id,
         )
@@ -122,6 +117,26 @@ async def test_e2e_full_billing_flow(db_session: AsyncSession) -> None:
         assert "Stripe" in str(e) or "payment" in str(e).lower()
 
     # Step 7: Verify complete workflow
+    # Refresh account with relationships
+    from sqlalchemy.orm import selectinload
+    from sqlalchemy import select
+    from billing.models.subscription import Subscription
+
+    account_result = await db_session.execute(
+        select(Account).where(Account.id == account.id).options(
+            selectinload(Account.subscriptions),
+            selectinload(Account.invoices)
+        )
+    )
+    account = account_result.scalar_one()
+
+    subscription_result = await db_session.execute(
+        select(Subscription).where(Subscription.id == subscription.id).options(
+            selectinload(Subscription.invoices)
+        )
+    )
+    subscription = subscription_result.scalar_one()
+
     # Account has active subscription
     assert len(account.subscriptions) == 1
     assert account.subscriptions[0].status == SubscriptionStatus.ACTIVE
@@ -153,12 +168,12 @@ async def test_e2e_midcycle_upgrade_prorated(db_session: AsyncSession) -> None:
 
     payment_method = PaymentMethod(
         account_id=account.id,
-        stripe_payment_method_id="pm_test_upgrade",
+        gateway_payment_method_id="pm_test_upgrade",
         type="card",
-        last4="5555",
-        brand="mastercard",
-        exp_month=6,
-        exp_year=2026,
+        card_last4="5555",
+        card_brand="mastercard",
+        card_exp_month="06",
+        card_exp_year="2026",
         is_default=True,
     )
     db_session.add(payment_method)
@@ -167,14 +182,14 @@ async def test_e2e_midcycle_upgrade_prorated(db_session: AsyncSession) -> None:
     # Step 2: Create two plans (starter and pro)
     starter_plan = Plan(
         name="Starter Plan",
-        price=1000,  # $10.00
+        amount=1000,  # $10.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
     )
     pro_plan = Plan(
         name="Pro Plan",
-        price=5000,  # $50.00
+        amount=5000,  # $50.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -250,7 +265,7 @@ async def test_e2e_usage_based_billing(db_session: AsyncSession) -> None:
     # Step 2: Create usage-based plan
     usage_plan = Plan(
         name="Pay-as-you-go Plan",
-        price=0,  # Base price $0
+        amount=0,  # Base price $0
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -332,7 +347,7 @@ async def test_e2e_subscription_lifecycle(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Lifecycle Test Plan",
-        price=3000,
+        amount=3000,
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -383,9 +398,9 @@ async def test_e2e_multi_subscription_account(db_session: AsyncSession) -> None:
     await db_session.flush()
 
     # Create multiple plans
-    plan1 = Plan(name="Plan 1", price=1000, currency="USD", interval=PlanInterval.MONTH, active=True)
-    plan2 = Plan(name="Plan 2", price=2000, currency="USD", interval=PlanInterval.MONTH, active=True)
-    plan3 = Plan(name="Plan 3", price=3000, currency="USD", interval=PlanInterval.MONTH, active=True)
+    plan1 = Plan(name="Plan 1", amount=1000, currency="USD", interval=PlanInterval.MONTH, active=True)
+    plan2 = Plan(name="Plan 2", amount=2000, currency="USD", interval=PlanInterval.MONTH, active=True)
+    plan3 = Plan(name="Plan 3", amount=3000, currency="USD", interval=PlanInterval.MONTH, active=True)
 
     db_session.add_all([plan1, plan2, plan3])
     await db_session.flush()

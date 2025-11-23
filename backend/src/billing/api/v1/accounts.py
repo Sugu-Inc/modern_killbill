@@ -4,7 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from billing.api.deps import get_db
+from billing.api.deps import get_db, get_current_user
+from billing.auth.rbac import require_roles, Role
 from billing.adapters.stripe_adapter import StripeAdapter
 from billing.models.account import AccountStatus
 from billing.schemas.account import Account, AccountCreate, AccountUpdate, AccountList
@@ -15,17 +16,22 @@ from billing.schemas.payment_method import (
     PaymentMethodUpdate,
 )
 from billing.schemas.credit import Credit, CreditList, CreditBalance
+from billing.schemas.webhook_event import WebhookEventList
 from billing.services.account_service import AccountService
 from billing.services.payment_method_service import PaymentMethodService
 from billing.services.credit_service import CreditService
+from billing.services.webhook_service import WebhookService
+from billing.cache import cache, cache_key
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
 @router.post("", response_model=Account, status_code=status.HTTP_201_CREATED)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def create_account(
     account_data: AccountCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> Account:
     """
     Create a new account.
@@ -38,8 +44,12 @@ async def create_account(
     service = AccountService(db)
 
     try:
-        account = await service.create_account(account_data)
+        account = await service.create_account(account_data, current_user=current_user)
         await db.commit()
+
+        # Invalidate account list cache
+        await cache.invalidate_pattern("account_list:*")
+
         return account
     except ValueError as e:
         await db.rollback()
@@ -56,6 +66,12 @@ async def get_account(
 
     Returns account details including status, currency, and metadata.
     """
+    # Check cache first
+    cache_key_str = cache_key("account", str(account_id))
+    cached = await cache.get(cache_key_str)
+    if cached:
+        return Account.model_validate(cached)
+
     service = AccountService(db)
     account = await service.get_account(account_id)
 
@@ -65,7 +81,13 @@ async def get_account(
             detail=f"Account {account_id} not found",
         )
 
-    return account
+    # Convert SQLAlchemy model to Pydantic schema
+    account_schema = Account.model_validate(account)
+
+    # Cache for 5 minutes
+    await cache.set(cache_key_str, account_schema.model_dump(), ttl=300)
+
+    return account_schema
 
 
 @router.get("", response_model=AccountList)
@@ -90,15 +112,26 @@ async def list_accounts(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Page size must be between 1 and 1000"
         )
 
+    # Check cache first
+    cache_key_str = cache_key("account_list", f"page{page}_size{page_size}_status{status_filter}")
+    cached = await cache.get(cache_key_str)
+    if cached:
+        return AccountList.model_validate(cached)
+
     service = AccountService(db)
     accounts, total = await service.list_accounts(page, page_size, status_filter)
 
-    return AccountList(
+    result = AccountList(
         items=accounts,
         total=total,
         page=page,
         page_size=page_size,
     )
+
+    # Cache for 1 minute (lists change more frequently)
+    await cache.set(cache_key_str, result.model_dump(), ttl=60)
+
+    return result
 
 
 @router.patch("/{account_id}", response_model=Account)
@@ -115,8 +148,13 @@ async def update_account(
     service = AccountService(db)
 
     try:
-        account = await service.update_account(account_id, update_data)
+        account = await service.update_account(account_id, update_data, current_user=current_user)
         await db.commit()
+
+        # Invalidate cache for this account and account lists
+        await cache.invalidate_pattern(f"account:{account_id}*")
+        await cache.invalidate_pattern("account_list:*")
+
         return account
     except ValueError as e:
         await db.rollback()
@@ -124,9 +162,11 @@ async def update_account(
 
 
 @router.delete("/{account_id}", status_code=status.HTTP_204_NO_CONTENT)
+@require_roles(Role.SUPER_ADMIN)
 async def delete_account(
     account_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> None:
     """
     Delete account (soft delete).
@@ -136,8 +176,12 @@ async def delete_account(
     service = AccountService(db)
 
     try:
-        await service.delete_account(account_id)
+        await service.delete_account(account_id, current_user=current_user)
         await db.commit()
+
+        # Invalidate cache for this account and account lists
+        await cache.invalidate_pattern(f"account:{account_id}*")
+        await cache.invalidate_pattern("account_list:*")
     except ValueError as e:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
@@ -147,10 +191,12 @@ async def delete_account(
 
 
 @router.post("/{account_id}/payment-methods", response_model=PaymentMethod, status_code=status.HTTP_201_CREATED)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def create_payment_method(
     account_id: UUID,
     payment_data: PaymentMethodCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> PaymentMethod:
     """
     Add payment method to account.
@@ -233,11 +279,13 @@ async def list_payment_methods(
 
 
 @router.patch("/{account_id}/payment-methods/{payment_method_id}", response_model=PaymentMethod)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def update_payment_method(
     account_id: UUID,
     payment_method_id: UUID,
     update_data: PaymentMethodUpdate,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> PaymentMethod:
     """
     Update payment method (set as default).
@@ -264,10 +312,12 @@ async def update_payment_method(
 
 
 @router.delete("/{account_id}/payment-methods/{payment_method_id}", status_code=status.HTTP_204_NO_CONTENT)
+@require_roles(Role.SUPER_ADMIN, Role.BILLING_ADMIN, Role.SUPPORT_REP)
 async def delete_payment_method(
     account_id: UUID,
     payment_method_id: UUID,
     db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ) -> None:
     """
     Delete payment method.
@@ -358,3 +408,43 @@ async def get_account_credit_balance(
     )
 
     return balance
+
+
+@router.get("/{account_id}/webhook-events", response_model=WebhookEventList)
+async def list_account_webhook_events(
+    account_id: UUID,
+    page: int = 1,
+    page_size: int = 50,
+    db: AsyncSession = Depends(get_db),
+) -> WebhookEventList:
+    """
+    List webhook events for an account.
+
+    Returns all webhook events related to this account across all resources
+    (invoices, payments, subscriptions, etc.).
+
+    - **page**: Page number (1-indexed, default: 1)
+    - **page_size**: Items per page (default: 50)
+    """
+    # Verify account exists
+    account_service = AccountService(db)
+    account = await account_service.get_account(account_id)
+    if not account:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Account {account_id} not found",
+        )
+
+    webhook_service = WebhookService(db)
+    events, total = await webhook_service.list_events_for_account(
+        account_id=account_id,
+        page=page,
+        page_size=page_size,
+    )
+
+    return WebhookEventList(
+        items=events,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )

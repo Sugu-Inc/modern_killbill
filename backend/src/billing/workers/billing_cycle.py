@@ -385,3 +385,122 @@ async def _renew_subscription(db: AsyncSession, subscription: Subscription) -> N
         new_period_start=current_end.isoformat(),
         new_period_end=next_period_end.isoformat(),
     )
+
+
+async def process_auto_resume_subscriptions(db: AsyncSession | None = None) -> dict[str, int]:
+    """
+    Process subscriptions that should be automatically resumed.
+
+    Also handles auto-cancellation for subscriptions paused > 90 days.
+
+    Args:
+        db: Optional database session (for testing). If None, creates new session.
+
+    Returns:
+        Dict with counts of resumed and cancelled subscriptions
+    """
+    # Use provided session or create new one
+    should_close_db = db is None
+    if db is None:
+        db = AsyncSessionLocal()
+
+    try:
+        try:
+            now = datetime.utcnow()
+            ninety_days_ago = now - timedelta(days=90)
+
+            # Find paused subscriptions that should be resumed
+            result = await db.execute(
+                select(Subscription)
+                .options(
+                    selectinload(Subscription.plan),
+                    selectinload(Subscription.account)
+                )
+                .where(
+                    Subscription.status == SubscriptionStatus.PAUSED,
+                )
+            )
+            paused_subscriptions = result.scalars().all()
+
+            logger.info(
+                "auto_resume_started",
+                paused_count=len(paused_subscriptions),
+            )
+
+            resumed = 0
+            cancelled = 0
+            errors = 0
+
+            subscription_service = SubscriptionService(db)
+
+            for subscription in paused_subscriptions:
+                try:
+                    # Check if should auto-cancel (paused > 90 days)
+                    # Determine when subscription was paused by looking at updated_at
+                    pause_duration = now - subscription.updated_at
+                    if pause_duration.days >= 90:
+                        # Auto-cancel
+                        subscription.status = SubscriptionStatus.CANCELLED
+                        subscription.cancelled_at = now
+
+                        await subscription_service._create_history(
+                            subscription_id=subscription.id,
+                            event_type="auto_cancelled",
+                            old_value="paused",
+                            new_value="cancelled",
+                        )
+
+                        cancelled += 1
+                        logger.info(
+                            "subscription_auto_cancelled",
+                            subscription_id=str(subscription.id),
+                            pause_duration_days=pause_duration.days,
+                        )
+
+                    # Check if should auto-resume
+                    elif subscription.pause_resumes_at and subscription.pause_resumes_at <= now:
+                        await subscription_service.resume_subscription(subscription.id)
+                        resumed += 1
+
+                        logger.info(
+                            "subscription_auto_resumed",
+                            subscription_id=str(subscription.id),
+                            resumed_at=now.isoformat(),
+                        )
+
+                    await db.commit()
+
+                except Exception as e:
+                    await db.rollback()
+                    errors += 1
+                    logger.exception(
+                        "auto_resume_failed",
+                        subscription_id=str(subscription.id),
+                        exc_info=e,
+                    )
+                    continue
+
+            logger.info(
+                "auto_resume_completed",
+                resumed=resumed,
+                cancelled=cancelled,
+                errors=errors,
+            )
+
+            return {
+                "resumed": resumed,
+                "cancelled": cancelled,
+                "errors": errors,
+            }
+
+        except Exception as e:
+            await db.rollback()
+            logger.exception(
+                "auto_resume_error",
+                exc_info=e,
+            )
+            raise
+    finally:
+        # Close session only if it was created by this function
+        if should_close_db and db is not None:
+            await db.close()

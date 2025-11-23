@@ -1,6 +1,17 @@
-"""Analytics snapshot model for pre-calculated metrics."""
-from datetime import date
-from sqlalchemy import Column, String, Integer, Date
+"""
+Analytics snapshot model for pre-calculated SaaS metrics.
+
+Stores hourly snapshots of key metrics:
+- MRR (Monthly Recurring Revenue)
+- Churn Rate (voluntary and involuntary)
+- LTV (Lifetime Value)
+- Usage trends by plan and customer segment
+
+Implements FR-117 to FR-121 (Analytics & Reporting requirements).
+"""
+
+from datetime import datetime
+from sqlalchemy import Column, String, Integer, Numeric, Date, DateTime, Index
 from sqlalchemy.dialects.postgresql import JSONB
 
 from billing.models.base import Base
@@ -8,19 +19,85 @@ from billing.models.base import Base
 
 class AnalyticsSnapshot(Base):
     """
-    Pre-calculated analytics metrics (MRR, churn, LTV).
+    Pre-calculated analytics metrics snapshot.
 
-    Updated by background worker every hour.
+    Stores point-in-time metrics calculated by background workers.
+    Updated hourly via analytics worker (FR-117).
     """
 
     __tablename__ = "analytics_snapshots"
 
-    metric_name = Column(String, nullable=False, index=True)  # mrr, churn_rate, ltv, etc.
-    value = Column(Integer, nullable=False)  # Metric value (cents for revenue, basis points for percentages)
-    period = Column(Date, nullable=False, default=date.today, index=True)  # Date of snapshot
-    currency = Column(String(3), nullable=True)  # For revenue metrics
-    extra_metadata = Column(JSONB, nullable=False, default=dict)  # Additional context
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    # Metric identification
+    metric_name = Column(
+        String(100),
+        nullable=False,
+        index=True,
+        comment="Metric name: mrr, churn_rate, ltv, usage_trend"
+    )
+
+    # Metric value (decimal for financial precision)
+    value = Column(
+        Numeric(precision=15, scale=2),
+        nullable=False,
+        comment="Metric value (e.g., $12,345.67 for MRR)"
+    )
+
+    # Time period for this snapshot
+    period = Column(
+        Date,
+        nullable=False,
+        index=True,
+        comment="Date for this metric snapshot"
+    )
+
+    # Additional metric metadata
+    metric_metadata = Column(
+        JSONB,
+        nullable=True,
+        comment="Additional metric details (breakdown by plan, segment, etc.)"
+    )
+
+    # Audit fields
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+        comment="Snapshot calculation timestamp"
+    )
+
+    # Composite index for efficient queries
+    __table_args__ = (
+        Index(
+            'ix_analytics_snapshots_metric_period',
+            'metric_name',
+            'period',
+            unique=True  # One snapshot per metric per period
+        ),
+    )
 
     def __repr__(self) -> str:
-        """String representation."""
-        return f"<AnalyticsSnapshot(metric={self.metric_name}, value={self.value}, period={self.period})>"
+        return (
+            f"<AnalyticsSnapshot("
+            f"metric={self.metric_name}, "
+            f"value={self.value}, "
+            f"period={self.period}"
+            f")>"
+        )
+
+
+# Metric name constants
+class MetricName:
+    """Constants for analytics metric names."""
+
+    MRR = "mrr"
+    CHURN_RATE = "churn_rate"
+    LTV = "ltv"
+    USAGE_TREND = "usage_trend"
+    ARR = "arr"
+    ARPU = "arpu"
+    NEW_MRR = "new_mrr"
+    EXPANSION_MRR = "expansion_mrr"
+    CONTRACTION_MRR = "contraction_mrr"
+    CHURNED_MRR = "churned_mrr"

@@ -78,6 +78,20 @@ async def _teardown_test_db() -> None:
         await conn.run_sync(Base.metadata.drop_all)
 
 
+async def _mock_current_user() -> dict:
+    """
+    Mock current user for testing.
+
+    Returns a Super Admin user to bypass all RBAC checks in tests.
+    """
+    return {
+        "user_id": "test-user-123",
+        "email": "test@example.com",
+        "role": "Super Admin",  # Super Admin has all permissions
+        "permissions": ["*"],  # All permissions
+    }
+
+
 @pytest.fixture(scope="function")
 def client() -> Generator[TestClient, None, None]:
     """
@@ -86,7 +100,7 @@ def client() -> Generator[TestClient, None, None]:
     Returns:
         TestClient: Synchronous test client for FastAPI with test database
     """
-    from billing.api.deps import get_db
+    from billing.api.deps import get_db, get_current_user
 
     # Setup database tables
     loop = asyncio.get_event_loop()
@@ -105,6 +119,7 @@ def client() -> Generator[TestClient, None, None]:
                 await session.close()
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = _mock_current_user
 
     with TestClient(app) as test_client:
         yield test_client
@@ -125,13 +140,14 @@ async def async_client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, 
     Yields:
         AsyncClient: Async HTTP client for API testing
     """
-    from billing.api.deps import get_db
+    from billing.api.deps import get_db, get_current_user
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         """Override database dependency to use test database."""
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_user] = _mock_current_user
 
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield client
@@ -186,3 +202,140 @@ def sample_subscription_data(sample_account_data: dict, sample_plan_data: dict) 
         "plan_id": "placeholder-plan-id",
         "quantity": 1,
     }
+
+
+# Alias for async database session
+@pytest_asyncio.fixture(scope="function")
+async def async_db(db_session: AsyncSession) -> AsyncGenerator[AsyncSession, None]:
+    """
+    Alias for db_session fixture for backward compatibility.
+
+    Args:
+        db_session: The main database session fixture
+
+    Yields:
+        AsyncSession: Database session for testing
+    """
+    yield db_session
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_account(db_session: AsyncSession):
+    """
+    Create a test account for integration tests.
+
+    Args:
+        db_session: Database session
+
+    Returns:
+        Account: Test account instance
+    """
+    from billing.models.account import Account
+
+    account = Account(
+        email="test@example.com",
+        name="Test Account",
+        currency="USD",
+        timezone="UTC",
+    )
+
+    db_session.add(account)
+    await db_session.commit()
+    await db_session.refresh(account)
+
+    return account
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_plan(db_session: AsyncSession):
+    """
+    Create a test plan for integration tests.
+
+    Args:
+        db_session: Database session
+
+    Returns:
+        Plan: Test plan instance
+    """
+    from billing.models.plan import Plan, PlanInterval, UsageType
+
+    plan = Plan(
+        name="Pro Plan",
+        interval=PlanInterval.MONTH,
+        amount=2900,  # $29.00 in cents
+        currency="USD",
+        trial_days=0,  # No trial for testing pause functionality
+        usage_type=UsageType.LICENSED,
+        active=True,
+    )
+
+    db_session.add(plan)
+    await db_session.commit()
+    await db_session.refresh(plan)
+
+    return plan
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_plan_premium(db_session: AsyncSession):
+    """
+    Create a premium test plan for integration tests.
+
+    Args:
+        db_session: Database session
+
+    Returns:
+        Plan: Premium test plan instance
+    """
+    from billing.models.plan import Plan, PlanInterval, UsageType
+
+    plan = Plan(
+        name="Premium Plan",
+        interval=PlanInterval.MONTH,
+        amount=9900,  # $99.00
+        currency="USD",
+        trial_days=0,
+        usage_type=UsageType.LICENSED,
+        active=True,
+    )
+
+    db_session.add(plan)
+    await db_session.commit()
+    await db_session.refresh(plan)
+
+    return plan
+
+
+@pytest_asyncio.fixture(scope="function")
+async def test_plan_usage(db_session: AsyncSession):
+    """
+    Create a usage-based test plan for integration tests.
+
+    Args:
+        db_session: Database session
+
+    Returns:
+        Plan: Usage-based test plan instance
+    """
+    from billing.models.plan import Plan, PlanInterval, UsageType
+
+    plan = Plan(
+        name="API Platform - Usage Based",
+        interval=PlanInterval.MONTH,
+        amount=0,  # Base amount
+        currency="USD",
+        trial_days=0,
+        usage_type=UsageType.METERED,
+        tiers=[
+            {"up_to": 1000, "unit_price": 0},  # First 1K free
+            {"up_to": 10000, "unit_price": 0.01},  # $0.01 per call
+            {"up_to": None, "unit_price": 0.005},  # $0.005 per call above 10K
+        ],
+        active=True,
+    )
+
+    db_session.add(plan)
+    await db_session.commit()
+    await db_session.refresh(plan)
+
+    return plan

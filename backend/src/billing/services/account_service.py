@@ -1,4 +1,5 @@
 """Account service for business logic."""
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import select, func
@@ -6,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from billing.models.account import Account, AccountStatus
 from billing.schemas.account import AccountCreate, AccountUpdate
+from billing.utils.audit import audit_create, audit_update, audit_delete
 
 
 class AccountService:
@@ -15,12 +17,14 @@ class AccountService:
         """Initialize account service with database session."""
         self.db = db
 
-    async def create_account(self, account_data: AccountCreate) -> Account:
+    @audit_create("account")
+    async def create_account(self, account_data: AccountCreate, current_user: Optional[dict] = None) -> Account:
         """
         Create a new account.
 
         Args:
             account_data: Account creation data
+            current_user: Current user context for audit logging
 
         Returns:
             Created account
@@ -91,13 +95,15 @@ class AccountService:
         )
         return result.scalar_one_or_none()
 
-    async def update_account(self, account_id: UUID, update_data: AccountUpdate) -> Account:
+    @audit_update("account")
+    async def update_account(self, account_id: UUID, update_data: AccountUpdate, current_user: Optional[dict] = None) -> Account:
         """
         Update account.
 
         Args:
             account_id: Account UUID
             update_data: Update data
+            current_user: Current user context for audit logging
 
         Returns:
             Updated account
@@ -109,22 +115,27 @@ class AccountService:
         if not account:
             raise ValueError(f"Account {account_id} not found")
 
-        # Update only provided fields
+        # Capture old values for audit
         update_dict = update_data.model_dump(exclude_unset=True)
+        old_values = {field: getattr(account, field) for field in update_dict.keys()}
+
+        # Update only provided fields
         for field, value in update_dict.items():
             setattr(account, field, value)
 
         await self.db.flush()
         await self.db.refresh(account)
 
-        return account
+        return account, old_values
 
-    async def delete_account(self, account_id: UUID) -> Account:
+    @audit_delete("account")
+    async def delete_account(self, account_id: UUID, current_user: Optional[dict] = None) -> Account:
         """
         Soft delete account.
 
         Args:
             account_id: Account UUID
+            current_user: Current user context for audit logging
 
         Returns:
             Account: The soft-deleted account

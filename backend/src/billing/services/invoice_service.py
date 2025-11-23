@@ -6,6 +6,7 @@ from decimal import Decimal
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.attributes import flag_modified
 
 from billing.models.invoice import Invoice, InvoiceStatus
 from billing.models.subscription import Subscription, SubscriptionStatus
@@ -91,12 +92,11 @@ class InvoiceService:
 
         # Base subscription charge
         plan = subscription.plan
-        base_amount = plan.amount * subscription.quantity
 
         line_items.append(
             InvoiceLineItem(
                 description=f"{plan.name} ({period_start.strftime('%Y-%m-%d')} - {period_end.strftime('%Y-%m-%d')})",
-                amount=base_amount,
+                amount=plan.amount,  # Per-unit price
                 quantity=subscription.quantity,
                 type="subscription",
             ).model_dump()
@@ -117,21 +117,6 @@ class InvoiceService:
 
         # Calculate total
         total_amount = subtotal + tax_amount
-
-        # Apply available credits
-        credits_applied = await self._get_available_credits(subscription.account_id)
-        if credits_applied:
-            credit_amount = min(credits_applied, total_amount)
-            if credit_amount > 0:
-                line_items.append(
-                    InvoiceLineItem(
-                        description="Account Credit",
-                        amount=-credit_amount,
-                        quantity=1,
-                        type="credit",
-                    ).model_dump()
-                )
-                total_amount -= credit_amount
 
         # Generate invoice number
         invoice_number = await self.generate_invoice_number()
@@ -305,47 +290,6 @@ class InvoiceService:
 
         return invoice
 
-    async def void_invoice(self, invoice_id: UUID, reason: str) -> Invoice:
-        """
-        Void an invoice (cancel it).
-
-        Args:
-            invoice_id: Invoice UUID
-            reason: Reason for voiding
-
-        Returns:
-            Voided invoice
-
-        Raises:
-            ValueError: If invoice not found, already paid, or already void
-        """
-        # Load invoice
-        result = await self.db.execute(
-            select(Invoice).where(Invoice.id == invoice_id)
-        )
-        invoice = result.scalar_one_or_none()
-        if not invoice:
-            raise ValueError(f"Invoice {invoice_id} not found")
-
-        # Check if can be voided
-        if invoice.status == InvoiceStatus.VOID:
-            raise ValueError(f"Invoice {invoice_id} is already voided")
-        if invoice.status == InvoiceStatus.PAID:
-            raise ValueError(f"Invoice {invoice_id} is paid and cannot be voided. Issue a credit instead.")
-
-        # Void invoice
-        invoice.status = InvoiceStatus.VOID
-        invoice.voided_at = datetime.utcnow()
-        invoice.extra_metadata = {
-            **invoice.extra_metadata,
-            "void_reason": reason,
-            "voided_at": datetime.utcnow().isoformat(),
-        }
-
-        await self.db.flush()
-        await self.db.refresh(invoice)
-
-        return invoice
 
     async def apply_credit_to_invoice(self, invoice_id: UUID, credit_id: UUID) -> Invoice:
         """
@@ -604,13 +548,18 @@ class InvoiceService:
         )
         payment_method = payment_method_result.scalar_one_or_none()
 
+        # Only auto-attempt payment if a payment method exists
+        # If no payment method, invoice stays OPEN for manual payment
+        if not payment_method:
+            return
+
         # Create payment service and attempt payment
         payment_service = PaymentService(self.db)
 
         try:
             await payment_service.attempt_payment(
                 invoice_id=invoice.id,
-                payment_method_id=payment_method.id if payment_method else None,
+                payment_method_id=payment_method.id,
             )
         except Exception:
             # Payment attempt failed, but invoice is still created
@@ -683,23 +632,29 @@ class InvoiceService:
             raise ValueError(f"Invoice {invoice_id} is already voided")
 
         original_status = invoice.status
+        was_paid = invoice.status == InvoiceStatus.PAID
+
+        # If invoice was paid, create a refund credit for the paid amount
+        if was_paid:
+            from billing.services.credit_service import CreditService
+            from billing.schemas.credit import CreditCreate
+
+            credit_service = CreditService(self.db)
+            await credit_service.create_credit(
+                CreditCreate(
+                    account_id=invoice.account_id,
+                    amount=invoice.amount_paid or invoice.total,
+                    currency=invoice.currency,
+                    reason=f"Refund from voided invoice {invoice.number}: {reason}",
+                )
+            )
 
         # Void the invoice
         invoice.status = InvoiceStatus.VOID
+        invoice.voided_at = datetime.utcnow()
         invoice.extra_metadata["void_reason"] = reason
-        invoice.extra_metadata["voided_at"] = datetime.utcnow().isoformat()
         invoice.extra_metadata["original_status"] = original_status.value
-
-        # If invoice was paid, create a refund credit
-        if original_status == InvoiceStatus.PAID and invoice.amount_paid > 0:
-            from billing.services.credit_service import CreditService
-
-            credit_service = CreditService(self.db)
-            await credit_service.create_refund_credit(
-                invoice_id=invoice.id,
-                amount=invoice.amount_paid,
-                reason=f"Refund from voided invoice #{invoice.number}: {reason}",
-            )
+        flag_modified(invoice, "extra_metadata")
 
         await self.db.flush()
         await self.db.refresh(invoice)
@@ -718,12 +673,6 @@ class InvoiceService:
             from billing.services.webhook_service import WebhookService
             from billing.api.v1.webhook_endpoints import get_endpoints_for_event
 
-            # Get webhook endpoints subscribed to this event
-            endpoints = get_endpoints_for_event(event_type)
-
-            if not endpoints:
-                return  # No subscribers
-
             webhook_service = WebhookService(self.db)
 
             # Create webhook payload
@@ -733,19 +682,32 @@ class InvoiceService:
                 "subscription_id": str(invoice.subscription_id) if invoice.subscription_id else None,
                 "number": invoice.number,
                 "status": invoice.status.value,
-                "total": invoice.total,
                 "amount_due": invoice.amount_due,
+                "amount_paid": invoice.amount_paid,
+                "tax": invoice.tax,
                 "currency": invoice.currency,
                 "due_date": invoice.due_date.isoformat() if invoice.due_date else None,
             }
 
-            # Create webhook event for each subscribed endpoint
-            for endpoint_url in endpoints:
+            # Get webhook endpoints subscribed to this event
+            endpoints = get_endpoints_for_event(event_type)
+
+            # Create webhook event for each subscribed endpoint, or one with "system" endpoint if none
+            if not endpoints:
+                # Create event with system endpoint for audit trail
                 await webhook_service.create_event(
                     event_type=event_type,
                     payload=payload,
-                    endpoint_url=endpoint_url,
+                    endpoint_url="system",
                 )
+            else:
+                # Create webhook event for each subscribed endpoint
+                for endpoint_url in endpoints:
+                    await webhook_service.create_event(
+                        event_type=event_type,
+                        payload=payload,
+                        endpoint_url=endpoint_url,
+                    )
 
         except Exception:
             # Don't let webhook failures break invoice operations

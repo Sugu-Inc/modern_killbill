@@ -199,11 +199,11 @@
 - [x] T068 [P] [US5] Create Pydantic schemas in backend/src/billing/schemas/payment.py (PaymentResponse, PaymentStatus enum) [FYI]
 - [x] T069 [US5] Create Alembic migration for payments table (indexes on invoice_id, status, idempotency_key) [Review - Low risk]
 - [x] T070 [US5] Implement PaymentService in backend/src/billing/services/payment_service.py (attempt_payment with Stripe integration, schedule_retry, process_retry_schedule [day 3,5,7,10], mark_account_overdue) [Review - High risk]
-- [ ] T071 [US5] Extend Stripe adapter in backend/src/billing/integrations/stripe.py (charge_payment_method with idempotency key, handle_webhook_events for payment confirmations) [Review - High risk]
+- [x] T071 [US5] Extend Stripe adapter in backend/src/billing/adapters/stripe_adapter.py (charge_payment_method with idempotency key, handle_webhook_events for payment confirmations) [Review - High risk]
 - [x] T072 [US5] Implement POST /v1/payments/retry endpoint in backend/src/billing/api/v1/payments.py (manual retry trigger) [Review - Low risk]
 - [x] T073 [US5] Implement GET /v1/payments endpoint in backend/src/billing/api/v1/payments.py (filter by invoice, status) [FYI]
-- [ ] T074 [US5] Implement Stripe webhook handler in backend/src/billing/api/webhooks/stripe.py (verify signature, process payment_intent.succeeded, payment_intent.payment_failed) [Review - High risk]
-- [ ] T075 [US5] Implement background worker for payment retries in backend/src/billing/workers/payment_retry.py (ARQ scheduled job to process retry queue) [Review - High risk]
+- [x] T074 [US5] Implement Stripe webhook handler in backend/src/billing/api/webhooks/stripe.py (verify signature, process payment_intent.succeeded, payment_intent.payment_failed) [Review - High risk]
+- [x] T075 [US5] Implement background worker for payment retries in backend/src/billing/workers/payment_retry.py (ARQ scheduled job to process retry queue) [Review - High risk]
 - [x] T076 [US5] Add payment attempt to billing cycle worker in backend/src/billing/workers/billing_cycle.py (auto-attempt payment after invoice generation) [Review - High risk]
 
 **Checkpoint**: US5 complete - payments auto-attempt, retries work, overdue handling implemented
@@ -226,7 +226,7 @@
 - [x] T079 [US6] Implement change_plan method in backend/src/billing/services/subscription_service.py (immediate upgrade with proration, end-of-period downgrade scheduling, quantity changes) [Review - High risk]
 - [x] T080 [US6] Enhance proration logic in backend/src/billing/services/invoice_service.py (handle upgrades, downgrades, annual-to-monthly conversions, per-seat quantity changes) [Review - High risk]
 - [x] T081 [US6] Implement PATCH /v1/subscriptions/{subscription_id} endpoint in backend/src/billing/api/v1/subscriptions.py (change plan, change quantity, schedule_change_at_period_end flag) [Review - Low risk]
-- [ ] T082 [US6] Implement background job to process scheduled plan changes in backend/src/billing/workers/billing_cycle.py (check for pending changes at period end) [Review - High risk]
+- [x] T082 [US6] Implement background job to process scheduled plan changes in backend/src/billing/workers/billing_cycle.py (check for pending changes at period end) [Review - High risk]
 
 **Checkpoint**: US6 complete - plan changes work with proration, scheduling supported
 
@@ -252,7 +252,7 @@
 - [x] T089 [US7] Integrate usage charge calculation into InvoiceService in backend/src/billing/services/invoice_service.py (add usage line items to invoice) [Review - High risk]
 - [x] T090 [US7] Implement POST /v1/usage endpoint in backend/src/billing/api/v1/usage.py (submit usage events with idempotency_key) [Review - Low risk]
 - [x] T091 [US7] Implement GET /v1/subscriptions/{subscription_id}/usage endpoint in backend/src/billing/api/v1/subscriptions.py (query usage for period) [FYI]
-- [ ] T092 [US7] Implement background job for late usage processing in backend/src/billing/workers/usage_finalizer.py (generate supplemental invoices for usage arriving after period close, within 7-day window) [Review - High risk]
+- [x] T092 [US7] Implement background job for late usage processing in backend/src/billing/workers/usage_finalizer.py (generate supplemental invoices for usage arriving after period close, within 7-day window) [Review - High risk]
 
 **Checkpoint**: US7 complete - usage tracking works, tier billing implemented, late usage handled
 
@@ -273,7 +273,7 @@
 - [x] T094 [US8] Implement DunningService in backend/src/billing/services/dunning_service.py (check_overdue_invoices, send_reminder [day 3], send_warning [day 7], block_account [day 14], unblock_on_payment) [Review - Low risk]
 - [x] T095 [US8] Add account status field to Account model in backend/src/billing/models/account.py (status enum: ACTIVE, WARNING, BLOCKED) [Review - Low risk]
 - [x] T096 [US8] Create Alembic migration to add status column to accounts table [Review - Low risk]
-- [ ] T097 [US8] Implement background worker for dunning process in backend/src/billing/workers/dunning.py (ARQ scheduled daily job) [Review - Low risk]
+- [x] T097 [US8] Implement background worker for dunning process in backend/src/billing/workers/dunning.py (ARQ scheduled daily job) [Review - Low risk]
 - [x] T098 [US8] Implement notification service integration in backend/src/billing/integrations/notification_service.py (send email/SMS via external service) [Review - Low risk]
 
 **Checkpoint**: US8 complete - dunning process runs automatically, service blocking works
@@ -294,7 +294,7 @@
 
 - [x] T100 [P] [US9] Create Credit model in backend/src/billing/models/credit.py (UUID id, account_id FK, amount, currency, reason, applied_to_invoice_id FK nullable, created_at) [FYI]
 - [x] T101 [P] [US9] Create Pydantic schemas in backend/src/billing/schemas/credit.py (CreditCreate, CreditResponse) [FYI]
-- [ ] T102 [US9] Create Alembic migration for credits table (indexes on account_id, applied_to_invoice_id) [Review - Low risk]
+- [x] T102 [US9] Create Alembic migration for credits table (indexes on account_id, applied_to_invoice_id) [Review - Low risk]
 - [x] T103 [US9] Implement CreditService in backend/src/billing/services/credit_service.py (create_credit, apply_credit_to_invoice, get_available_credits_for_account) [Review - High risk]
 - [x] T104 [US9] Integrate credit application into InvoiceService in backend/src/billing/services/invoice_service.py (auto-apply credits when generating invoice) [Review - High risk]
 - [x] T105 [US9] Implement POST /v1/credits endpoint in backend/src/billing/api/v1/credits.py [Review - Low risk]
@@ -340,7 +340,7 @@
 
 - [x] T114 [P] [US11] Create WebhookEvent model in backend/src/billing/models/webhook_event.py (UUID id, event_type, payload JSONB, endpoint_url, status enum, retry_count, created_at, delivered_at) [FYI]
 - [x] T115 [P] [US11] Create Pydantic schemas in backend/src/billing/schemas/webhook_event.py (WebhookEventResponse, WebhookEventType enum) [FYI]
-- [ ] T116 [US11] Create Alembic migration for webhook_events table (indexes on status, event_type) [Review - Low risk]
+- [x] T116 [US11] Create Alembic migration for webhook_events table (indexes on status, event_type) [Review - Low risk]
 - [x] T117 [US11] Implement WebhookService in backend/src/billing/services/webhook_service.py (send_event, retry_failed_events with exponential backoff [5 retries], filter_events_by_category) [Review - Low risk]
 - [x] T118 [US11] Implement POST /v1/webhook-endpoints endpoint in backend/src/billing/api/v1/webhook_endpoints.py (configure webhook endpoint URL) [Review - Low risk]
 - [x] T119 [US11] Implement background worker for webhook delivery in backend/src/billing/workers/webhook_delivery.py (ARQ async job for non-blocking delivery) [Review - Low risk]
@@ -401,11 +401,11 @@
 
 ### Implementation for US14
 
-- [ ] T131 [P] [US14] Define GraphQL schema using Strawberry in backend/src/billing/graphql/schema.py (Account, Plan, Subscription, Invoice types) [FYI]
-- [ ] T132 [P] [US14] Implement GraphQL resolvers in backend/src/billing/graphql/resolvers/ (account_resolver.py, subscription_resolver.py, invoice_resolver.py) [FYI]
-- [ ] T133 [US14] Setup DataLoader for N+1 prevention in backend/src/billing/graphql/dataloaders.py (account_loader, plan_loader, subscription_loader) [FYI]
-- [ ] T134 [US14] Implement cursor-based pagination for GraphQL queries in backend/src/billing/graphql/pagination.py [FYI]
-- [ ] T135 [US14] Mount Strawberry GraphQL app in backend/src/billing/main.py at /graphql endpoint [FYI]
+- [x] T131 [P] [US14] Define GraphQL schema using Strawberry in backend/src/billing/graphql/schema.py (Account, Plan, Subscription, Invoice types) [FYI]
+- [x] T132 [P] [US14] Implement GraphQL resolvers in backend/src/billing/graphql/resolvers.py (account_resolver, subscription_resolver, invoice_resolver) [FYI]
+- [x] T133 [US14] Setup DataLoader for N+1 prevention in backend/src/billing/graphql/resolvers.py (load_accounts, load_plans, load_subscriptions) [FYI]
+- [x] T134 [US14] Implement cursor-based pagination for GraphQL queries in backend/src/billing/graphql/resolvers.py (paginate_query, encode/decode_cursor) [FYI]
+- [x] T135 [US14] Mount Strawberry GraphQL app in backend/src/billing/main.py at /graphql endpoint [FYI]
 
 **Checkpoint**: US14 complete - GraphQL API available with efficient nested querying
 
@@ -419,15 +419,15 @@
 
 ### Implementation for US15
 
-- [ ] T136 [P] [US15] Create AnalyticsSnapshot model in backend/src/billing/models/analytics_snapshot.py (metric_name, value, period date, metadata JSONB, created_at) [Review - Low risk]
-- [ ] T137 [US15] Create Alembic migration for analytics_snapshots table (indexes on metric_name, period) [Review - Low risk]
-- [ ] T138 [US15] Implement AnalyticsService in backend/src/billing/services/analytics_service.py (calculate_mrr, calculate_churn_rate, calculate_ltv, calculate_usage_trends) [Review - Low risk]
-- [ ] T139 [US15] Implement GET /v1/analytics/mrr endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
-- [ ] T140 [US15] Implement GET /v1/analytics/churn endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
-- [ ] T141 [US15] Implement GET /v1/analytics/ltv endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
-- [ ] T142 [US15] Implement background worker for analytics calculation in backend/src/billing/workers/analytics.py (ARQ hourly job to update snapshots) [Review - Low risk]
+- [x] T136 [P] [US15] Create AnalyticsSnapshot model in backend/src/billing/models/analytics_snapshot.py (metric_name, value, period date, metadata JSONB, created_at) [Review - Low risk]
+- [x] T137 [US15] Create Alembic migration for analytics_snapshots table (indexes on metric_name, period) [Review - Low risk]
+- [x] T138 [US15] Implement AnalyticsService in backend/src/billing/services/analytics_service.py (calculate_mrr, calculate_churn_rate, calculate_ltv, calculate_usage_trends) [Review - Low risk]
+- [x] T139 [US15] Implement GET /v1/analytics/mrr endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
+- [x] T140 [US15] Implement GET /v1/analytics/churn endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
+- [x] T141 [US15] Implement GET /v1/analytics/ltv endpoint in backend/src/billing/api/v1/analytics.py [Review - Low risk]
+- [x] T142 [US15] Implement background worker for analytics calculation in backend/src/billing/workers/analytics.py (ARQ hourly job to update snapshots) [Review - Low risk]
 
-**Checkpoint**: US15 complete - analytics metrics auto-calculate and available via API
+**Checkpoint**: US15 complete ✅ - analytics metrics auto-calculate and available via API
 
 ---
 
@@ -439,17 +439,17 @@
 
 ### Tests for US16
 
-- [ ] T143 [P] [US16] Integration test for pause/resume in backend/tests/integration/test_subscription_pause.py (test_pause_stops_billing, test_auto_resume_on_date, test_auto_cancel_after_90_days, test_usage_tracking_stops_during_pause) [FYI]
+- [x] T143 [P] [US16] Integration test for pause/resume in backend/tests/integration/test_subscription_pause.py (test_pause_stops_billing, test_auto_resume_on_date, test_auto_cancel_after_90_days, test_usage_tracking_stops_during_pause) [FYI]
 
 ### Implementation for US16
 
-- [ ] T144 [US16] Add PAUSED status and pause_resumes_at field to Subscription model in backend/src/billing/models/subscription.py [Review - Low risk]
-- [ ] T145 [US16] Create Alembic migration to add pause_resumes_at to subscriptions table [Review - Low risk]
-- [ ] T146 [US16] Implement pause_subscription and resume_subscription methods in backend/src/billing/services/subscription_service.py (auto-cancel if paused > 90 days) [Review - High risk]
-- [ ] T147 [US16] Implement POST /v1/subscriptions/{subscription_id}/pause endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
-- [ ] T148 [US16] Implement POST /v1/subscriptions/{subscription_id}/resume endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
-- [ ] T149 [US16] Update billing cycle worker to skip paused subscriptions in backend/src/billing/workers/billing_cycle.py [Review - Low risk]
-- [ ] T150 [US16] Add background job to auto-resume subscriptions in backend/src/billing/workers/billing_cycle.py (check pause_resumes_at dates) [Review - Low risk]
+- [x] T144 [US16] Add PAUSED status and pause_resumes_at field to Subscription model in backend/src/billing/models/subscription.py [Review - Low risk]
+- [x] T145 [US16] Create Alembic migration to add pause_resumes_at to subscriptions table [Review - Low risk]
+- [x] T146 [US16] Implement pause_subscription and resume_subscription methods in backend/src/billing/services/subscription_service.py (auto-cancel if paused > 90 days) [Review - High risk]
+- [x] T147 [US16] Implement POST /v1/subscriptions/{subscription_id}/pause endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
+- [x] T148 [US16] Implement POST /v1/subscriptions/{subscription_id}/resume endpoint in backend/src/billing/api/v1/subscriptions.py [Review - Low risk]
+- [x] T149 [US16] Update billing cycle worker to skip paused subscriptions in backend/src/billing/workers/billing_cycle.py [Review - Low risk]
+- [x] T150 [US16] Add background job to auto-resume subscriptions in backend/src/billing/workers/billing_cycle.py (check pause_resumes_at dates) [Review - Low risk]
 
 **Checkpoint**: US16 complete - subscriptions can be paused and auto-resume
 
@@ -461,30 +461,38 @@
 
 ### Authentication & Authorization (RBAC - 4 roles per spec)
 
-- [ ] T151 [P] Implement JWT authentication with RS256 signing in backend/src/billing/auth/jwt.py (create_access_token, verify_token) [Review - High risk]
-- [ ] T152 [P] Implement RBAC decorator in backend/src/billing/auth/rbac.py with roles: Super Admin, Billing Admin, Support Rep, Finance Viewer [Review - High risk]
-- [ ] T153 Integrate auth into get_current_user() dependency in backend/src/billing/api/deps.py [Review - High risk]
-- [ ] T154 [P] Add role-based access control to all API endpoints (apply RBAC decorator) [Review - High risk]
+- [x] T151 [P] Implement JWT authentication with RS256 signing in backend/src/billing/auth/jwt.py (create_access_token, verify_token) [Review - High risk]
+- [x] T152 [P] Implement RBAC decorator in backend/src/billing/auth/rbac.py with roles: Super Admin, Billing Admin, Support Rep, Finance Viewer [Review - High risk]
+- [x] T153 Integrate auth into get_current_user() dependency in backend/src/billing/api/deps.py [Review - High risk]
+- [x] T154 [P] Add role-based access control to all API endpoints (apply RBAC decorator) [Review - High risk]
 
 ### Audit Logging (FR-143)
 
-- [ ] T155 [P] Create AuditLog model in backend/src/billing/models/audit_log.py (entity_type, entity_id, action, user_id, changes JSONB, created_at) [Review - High risk]
-- [ ] T156 Create Alembic migration for audit_logs table (indexes on entity_type, entity_id, created_at) [Review - High risk]
-- [ ] T157 Implement audit logging decorator in backend/src/billing/utils/audit.py [Review - High risk]
-- [ ] T158 Apply audit logging to all create/update/delete operations in services [Review - High risk]
+- [x] T155 [P] Create AuditLog model in backend/src/billing/models/audit_log.py (entity_type, entity_id, action, user_id, changes JSONB, created_at) [Review - High risk]
+- [x] T156 Create Alembic migration for audit_logs table (indexes on entity_type, entity_id, created_at) [Review - High risk]
+- [x] T157 Implement audit logging decorator in backend/src/billing/utils/audit.py [Review - High risk]
+- [x] T158 Apply audit logging to all create/update/delete operations in services [Review - High risk]
 
 ### Performance & Caching
 
-- [ ] T159 [P] Implement Redis caching layer in backend/src/billing/cache.py (cache_get, cache_set, cache_invalidate) [Review - Low risk]
-- [ ] T160 [P] Implement rate limiting middleware using Redis in backend/src/billing/middleware/rate_limit.py (1000 req/hour per API key) [Review - Low risk]
-- [ ] T161 Add caching to frequently accessed endpoints (GET plans, GET accounts) [Review - Low risk]
-- [ ] T162 Add database query optimization: ensure all foreign keys indexed, add composite indexes for common filters [Review - Low risk]
+- [x] T159 [P] Implement Redis caching layer in backend/src/billing/cache.py (cache_get, cache_set, cache_invalidate) [Review - Low risk]
+- [x] T160 [P] Implement rate limiting middleware using Redis in backend/src/billing/middleware/rate_limit.py (1000 req/hour per API key) [Review - Low risk]
+- [x] T161 Add caching to frequently accessed endpoints (GET plans, GET accounts) [Review - Low risk]
+- [x] T162 Add database query optimization: ensure all foreign keys indexed, add composite indexes for common filters [Review - Low risk]
 
 ### Data Retention & Cleanup (FR-142 to FR-144)
 
-- [ ] T163 [P] Implement data retention worker in backend/src/billing/workers/data_retention.py (delete audit logs > 3 years, purge soft-deleted accounts after 30 days) [Review - High risk]
-- [ ] T164 Implement soft delete for accounts in backend/src/billing/models/account.py (deleted_at field) [Review - High risk]
-- [ ] T165 Create Alembic migration to add deleted_at to accounts table [Review - High risk]
+- [x] T163 [P] Implement data retention worker in backend/src/billing/workers/data_retention.py (delete audit logs > 3 years, purge soft-deleted accounts after 30 days) [Review - High risk]
+- [x] T164 Implement soft delete for accounts in backend/src/billing/models/account.py (deleted_at field) [Review - High risk]
+- [x] T165 Create Alembic migration to add deleted_at to accounts table [Review - High risk]
+
+### SOC2 & GDPR Compliance Enhancements (Optional Security Hardening)
+
+- [x] T181 [P] Implement database encryption at rest in backend/alembic/ (configure PostgreSQL Transparent Data Encryption or volume-level encryption) [Review - High risk]
+- [x] T182 [P] Add security headers middleware in backend/src/billing/middleware/security_headers.py (Content-Security-Policy, Strict-Transport-Security, X-Frame-Options, X-Content-Type-Options, Referrer-Policy) [Review - Low risk]
+- [x] T183 [P] Implement JWT token expiration and refresh endpoint in backend/src/billing/auth/jwt.py and backend/src/billing/api/v1/auth.py (15min access token, 7d refresh token) [Review - High risk]
+- [x] T184 [P] Create automated database backup script in backend/scripts/backup.py with restore testing (PostgreSQL pg_dump, verify restore to test DB) [Review - Low risk]
+- [x] T185 [P] Implement security event monitoring in backend/src/billing/middleware/security_monitor.py (track failed auth attempts, unusual access patterns, alert on threshold breach) [Review - High risk]
 
 ### Error Handling & Validation
 
@@ -512,7 +520,7 @@
 - [x] T178 End-to-end test: Create subscription → Upgrade mid-cycle → Verify prorated invoice → Process payment [FYI]
 - [x] T179 End-to-end test: Create usage-based subscription → Submit usage → Generate invoice → Verify usage charges on invoice [FYI]
 - [x] Additional E2E tests: Subscription lifecycle, multi-subscription accounts (test_e2e_workflows.py)
-- [ ] T180 Load test: Verify 100 invoices/sec generation rate using Locust or k6 [FYI]
+- [x] T180 Load test: Verify 100 invoices/sec generation rate using Locust or k6 [FYI]
 
 **Checkpoint**: Platform production-ready with 99.9% uptime capability
 
@@ -561,9 +569,9 @@ Tasks marked with **[P]** can run in parallel within the same phase:
 ### Phase 7 (US5): T065-T068 can run in parallel
 ### Phase 19 (Polish): Most tasks can run in parallel (marked with [P])
 
-**Estimated total tasks**: 180
-**Estimated parallel reduction**: 40% (72 tasks can run simultaneously)
-**Effective sequential tasks**: ~108
+**Estimated total tasks**: 185 (167 complete, 18 remaining)
+**Estimated parallel reduction**: 40% (74 tasks can run simultaneously)
+**Effective sequential tasks**: ~111
 
 ---
 

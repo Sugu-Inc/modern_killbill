@@ -36,6 +36,7 @@ class Subscription(Base):
     cancel_at_period_end = Column(Boolean, nullable=False, default=False)
     cancelled_at = Column(DateTime, nullable=True)
     trial_end = Column(DateTime, nullable=True)
+    paused_at = Column(DateTime, nullable=True)  # When subscription was paused (for billing cycle extension)
     pause_resumes_at = Column(DateTime, nullable=True)  # Auto-resume date for paused subscriptions
     pending_plan_id = Column(UUID(as_uuid=True), ForeignKey("plans.id"), nullable=True)  # For scheduled plan changes
 

@@ -26,10 +26,14 @@ opentelemetry-instrumentation-fastapi = "^0.43b0"
 opentelemetry-instrumentation-sqlalchemy = "^0.43b0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+pyjwt = {extras = ["crypto"], version = "^2.8.0"}
+cryptography = "^42.0.0"
 python-multipart = "^0.0.6"
 faker = "^22.6.0"
 arq = "^0.25.0"
 email-validator = "^2.3.0"
+strawberry-graphql = {extras = ["fastapi"], version = "^0.216.0"}
+jinja2 = "^3.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.4"

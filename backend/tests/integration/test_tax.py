@@ -29,7 +29,7 @@ async def test_calculate_tax_for_jurisdiction(db_session: AsyncSession) -> None:
     # Create a plan
     plan = Plan(
         name="Basic Monthly",
-        price=1000,  # $10.00
+        amount=1000,  # $10.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -81,7 +81,7 @@ async def test_tax_exempt_account(db_session: AsyncSession) -> None:
     # Create a plan
     plan = Plan(
         name="Basic Monthly",
-        price=1000,  # $10.00
+        amount=1000,  # $10.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,
@@ -141,7 +141,7 @@ async def test_eu_vat_reverse_charge(db_session: AsyncSession) -> None:
     # Create a plan in EUR
     plan = Plan(
         name="Business Monthly",
-        price=5000,  # €50.00
+        amount=5000,  # €50.00
         currency="EUR",
         interval=PlanInterval.MONTH,
         active=True,
@@ -327,7 +327,7 @@ async def test_invoice_includes_tax_breakdown(db_session: AsyncSession) -> None:
     # Create plan
     plan = Plan(
         name="Premium Plan",
-        price=2500,  # $25.00
+        amount=2500,  # $25.00
         currency="USD",
         interval=PlanInterval.MONTH,
         active=True,

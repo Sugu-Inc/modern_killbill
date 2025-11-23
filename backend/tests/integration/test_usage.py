@@ -387,6 +387,7 @@ async def test_query_usage_for_period_via_api(async_client: AsyncClient) -> None
             "amount": 0,
             "currency": "USD",
             "usage_type": "metered",
+            "tiers": [{"up_to": None, "unit_amount": 10}],
         },
     )
     plan_id = plan_response.json()["id"]

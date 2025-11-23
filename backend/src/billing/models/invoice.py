@@ -47,6 +47,18 @@ class Invoice(Base):
     payments = relationship("Payment", back_populates="invoice")
     applied_credits = relationship("Credit", foreign_keys="Credit.applied_to_invoice_id", back_populates="applied_invoice")
 
+    @property
+    def subtotal(self) -> int:
+        """Calculate subtotal (total before tax) from line items."""
+        if isinstance(self.line_items, list):
+            return sum(item.get("amount", 0) * item.get("quantity", 1) for item in self.line_items)
+        return 0
+
+    @property
+    def total(self) -> int:
+        """Calculate total (subtotal + tax)."""
+        return self.subtotal + self.tax
+
     def __repr__(self) -> str:
         """String representation."""
         return f"<Invoice(id={self.id}, number={self.number}, status={self.status.value}, amount_due={self.amount_due})>"

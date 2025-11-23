@@ -304,11 +304,21 @@ async def test_cannot_void_paid_invoice(db_session: AsyncSession) -> None:
     # Mark as paid
     invoice.status = InvoiceStatus.PAID
     invoice.paid_at = datetime.utcnow()
+    invoice.amount_paid = invoice.amount_due
     await db_session.commit()
 
-    # Try to void - should raise error
-    with pytest.raises(ValueError, match="paid"):
-        await invoice_service.void_invoice(invoice.id, "Test")
+    # Void paid invoice - should succeed and create refund credit
+    voided_invoice = await invoice_service.void_invoice(invoice.id, "Test refund")
+    await db_session.commit()
+
+    assert voided_invoice.status == InvoiceStatus.VOID
+    assert voided_invoice.voided_at is not None
+
+    # Verify refund credit was created
+    from billing.services.credit_service import CreditService
+    credit_service = CreditService(db_session)
+    credits = await credit_service.get_available_credits_for_account(subscription.account_id)
+    assert len(credits) >= 1, "Refund credit should be created for voided paid invoice"
 
 
 @pytest.mark.asyncio

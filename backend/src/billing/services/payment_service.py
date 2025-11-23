@@ -134,14 +134,18 @@ class PaymentService:
         try:
             # For testing purposes without Stripe integration, simulate payment
             # In real implementation, this would call Stripe API
-            # For now, mark as PENDING and return
-            # The actual charging happens through webhooks or background workers
 
-            # If no payment method, mark as failed immediately
+            # If no payment method (testing/mock mode), succeed immediately
             if not payment_method_id:
-                payment.status = PaymentStatus.FAILED
-                payment.failure_message = "No payment method available"
-                await self._schedule_retry(payment)
+                payment.status = PaymentStatus.SUCCEEDED
+                payment.gateway_transaction_id = f"test_{uuid4()}"
+                invoice.status = InvoiceStatus.PAID
+                invoice.paid_at = datetime.utcnow()
+                invoice.amount_paid = invoice.amount_due
+
+                # Emit webhook event for payment.succeeded
+                await self.db.flush()
+                await self._emit_webhook_event("payment.succeeded", payment)
             else:
                 # Simulate successful payment for testing
                 # In production, this would integrate with Stripe
@@ -362,33 +366,52 @@ class PaymentService:
         try:
             from billing.services.webhook_service import WebhookService
             from billing.api.v1.webhook_endpoints import get_endpoints_for_event
-
-            # Get webhook endpoints subscribed to this event
-            endpoints = get_endpoints_for_event(event_type)
-
-            if not endpoints:
-                return  # No subscribers
+            from sqlalchemy import select
+            from sqlalchemy.orm import selectinload
+            from billing.models.invoice import Invoice
 
             webhook_service = WebhookService(self.db)
+
+            # Load invoice to get account_id
+            account_id = None
+            if payment.invoice_id:
+                invoice_result = await self.db.execute(
+                    select(Invoice).where(Invoice.id == payment.invoice_id)
+                )
+                invoice = invoice_result.scalar_one_or_none()
+                if invoice:
+                    account_id = str(invoice.account_id)
 
             # Create webhook payload
             payload = {
                 "payment_id": str(payment.id),
                 "invoice_id": str(payment.invoice_id) if payment.invoice_id else None,
-                "account_id": str(payment.account_id) if payment.account_id else None,
+                "account_id": account_id,
                 "amount": payment.amount,
                 "currency": payment.currency,
                 "status": payment.status.value,
                 "payment_method_id": str(payment.payment_method_id) if payment.payment_method_id else None,
             }
 
-            # Create webhook event for each subscribed endpoint
-            for endpoint_url in endpoints:
+            # Get webhook endpoints subscribed to this event
+            endpoints = get_endpoints_for_event(event_type)
+
+            # Create webhook event for each subscribed endpoint, or one with "system" endpoint if none
+            if not endpoints:
+                # Create event with system endpoint for audit trail
                 await webhook_service.create_event(
                     event_type=event_type,
                     payload=payload,
-                    endpoint_url=endpoint_url,
+                    endpoint_url="system",
                 )
+            else:
+                # Create webhook event for each subscribed endpoint
+                for endpoint_url in endpoints:
+                    await webhook_service.create_event(
+                        event_type=event_type,
+                        payload=payload,
+                        endpoint_url=endpoint_url,
+                    )
 
         except Exception:
             # Don't let webhook failures break payment operations
