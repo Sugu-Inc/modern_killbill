@@ -59,6 +59,17 @@ class Invoice(Base):
         """Calculate total (subtotal + tax)."""
         return self.subtotal + self.tax
 
+    @property
+    def credits_applied(self) -> int:
+        """Calculate total credits applied to this invoice."""
+        try:
+            if hasattr(self, 'applied_credits') and self.applied_credits:
+                return sum(credit.amount for credit in self.applied_credits)
+        except Exception:
+            # Handle detached instance or lazy loading errors
+            pass
+        return 0
+
     def __repr__(self) -> str:
         """String representation."""
         return f"<Invoice(id={self.id}, number={self.number}, status={self.status.value}, amount_due={self.amount_due})>"

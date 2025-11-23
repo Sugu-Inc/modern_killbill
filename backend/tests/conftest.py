@@ -6,6 +6,7 @@ import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from billing.database import Base
@@ -13,10 +14,18 @@ from billing.main import app
 
 # Test database URL (use a separate test database)
 TEST_DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/billing_test"
+TEST_DATABASE_URL_SYNC = "postgresql+psycopg2://postgres:postgres@localhost:5432/billing_test"
 
 # Create async test engine
 test_engine = create_async_engine(
     TEST_DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+)
+
+# Create synchronous test engine for client fixture (avoids event loop conflicts)
+sync_test_engine = create_engine(
+    TEST_DATABASE_URL_SYNC,
     echo=False,
     pool_pre_ping=True,
 )
@@ -78,6 +87,18 @@ async def _teardown_test_db() -> None:
         await conn.run_sync(Base.metadata.drop_all)
 
 
+def _sync_setup_test_db() -> None:
+    """Create database tables for testing (synchronous version for client fixture)."""
+    with sync_test_engine.begin() as conn:
+        Base.metadata.create_all(conn)
+
+
+def _sync_teardown_test_db() -> None:
+    """Drop database tables after testing (synchronous version for client fixture)."""
+    with sync_test_engine.begin() as conn:
+        Base.metadata.drop_all(conn)
+
+
 async def _mock_current_user() -> dict:
     """
     Mock current user for testing.
@@ -101,10 +122,20 @@ def client() -> Generator[TestClient, None, None]:
         TestClient: Synchronous test client for FastAPI with test database
     """
     from billing.api.deps import get_db, get_current_user
+    import asyncio
 
-    # Setup database tables
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(_setup_test_db())
+    # Clean up any lingering async connections BEFORE setting up sync client
+    # This prevents event loop conflicts when this test runs after async tests
+    cleanup_loop = asyncio.new_event_loop()
+    try:
+        cleanup_loop.run_until_complete(test_engine.dispose())
+    except Exception:
+        pass
+    finally:
+        cleanup_loop.close()
+
+    # Setup database tables using sync engine (avoids event loop conflicts)
+    _sync_setup_test_db()
 
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         """Override database dependency to use test database."""
@@ -124,9 +155,24 @@ def client() -> Generator[TestClient, None, None]:
     with TestClient(app) as test_client:
         yield test_client
 
-    # Clean up
+    # Clean up using sync engine
     app.dependency_overrides.clear()
-    loop.run_until_complete(_teardown_test_db())
+    _sync_teardown_test_db()
+
+    # Dispose of any lingering async connections to avoid event loop conflicts
+    # Use a fresh event loop for cleanup
+    import asyncio
+    cleanup_loop = asyncio.new_event_loop()
+    try:
+        cleanup_loop.run_until_complete(test_engine.dispose())
+    except Exception:
+        # If there's any issue with cleanup, just pass - tables are already dropped
+        pass
+    finally:
+        cleanup_loop.close()
+
+    # Also dispose sync engine pool
+    sync_test_engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="function")
