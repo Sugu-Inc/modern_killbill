@@ -75,3 +75,5 @@ Thumbs.db
 *.swp
 .~*
 dump.rdb
+**/.DS_Store
+.DS_Store
