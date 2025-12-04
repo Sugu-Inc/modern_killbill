@@ -1,6 +1,27 @@
 # Modern Subscription Billing Platform
 
-A simplified, cloud-native subscription billing platform built with Python FastAPI, delivering 80% of business value with 50% of code complexity.
+> **A modern Python rewrite of [Kill Bill](https://github.com/killbill/killbill)**
+
+A simplified, cloud-native subscription billing platform built with Python FastAPI, delivering 80% of business value with 50% of code complexity. This project reimagines Kill Bill's robust billing engine with modern architectural patterns, async-first design, and significantly reduced complexity.
+
+## About This Project
+
+This is a **demonstration/case study** project that showcases:
+- Modern cloud-native architecture patterns
+- Async-first Python development with FastAPI
+- Code reduction techniques (50% less complexity vs. traditional Java implementations)
+- Production-ready patterns for subscription billing
+
+**Inspired by**: [Kill Bill](https://github.com/killbill/killbill) - The open-source subscription billing and payments platform
+
+### Disclaimer
+
+**This is a demonstration/case study project.** It showcases modern architecture patterns and code reduction techniques. For production subscription billing needs, consider:
+- The original [Kill Bill](https://github.com/killbill/killbill) project for full-featured enterprise billing
+- Commercial alternatives like Stripe Billing, Chargebee, or Recurly
+- This project as a reference implementation or starting point for custom solutions
+
+This implementation focuses on core billing workflows and may not include all features required for enterprise deployments.
 
 ## Features
 
@@ -261,9 +282,23 @@ Includes:
 - **Usage Ingestion**: 10,000 events/minute
 - **Scale**: 100,000 active subscriptions
 
+## Acknowledgments
+
+This project is a modern rewrite inspired by [Kill Bill](https://github.com/killbill/killbill), the open-source subscription billing and payments platform. We're grateful to the Kill Bill community for pioneering open-source billing solutions.
+
+**Key Differences from Kill Bill**:
+- **Language**: Python 3.11+ (vs. Java)
+- **Framework**: FastAPI async (vs. Spring/JAX-RS)
+- **Architecture**: Simplified microservices-ready (vs. plugin-based)
+- **Database**: PostgreSQL-first (vs. MySQL-first)
+- **Complexity**: ~50% reduction in code complexity
+- **Philosophy**: 80/20 rule - core features with minimal complexity
+
 ## License
 
-Proprietary - All rights reserved
+Apache License 2.0 - See [LICENSE](../LICENSE) for details.
+
+This project is licensed under the same license as Kill Bill to maintain compatibility with the open-source billing ecosystem.
 
 ## Support
 
