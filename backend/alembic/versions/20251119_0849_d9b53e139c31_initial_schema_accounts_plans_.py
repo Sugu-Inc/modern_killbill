@@ -23,15 +23,6 @@ def upgrade() -> None:
     # Enable UUID extension
     op.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"')
 
-    # Create enums
-    op.execute("CREATE TYPE accountstatus AS ENUM ('active', 'warning', 'blocked')")
-    op.execute("CREATE TYPE planinterval AS ENUM ('month', 'year')")
-    op.execute("CREATE TYPE usagetype AS ENUM ('tiered', 'volume', 'graduated')")
-    op.execute("CREATE TYPE subscriptionstatus AS ENUM ('trialing', 'active', 'past_due', 'cancelled', 'paused')")
-    op.execute("CREATE TYPE invoicestatus AS ENUM ('draft', 'open', 'paid', 'void', 'past_due')")
-    op.execute("CREATE TYPE paymentstatus AS ENUM ('pending', 'succeeded', 'failed', 'cancelled')")
-    op.execute("CREATE TYPE webhookstatus AS ENUM ('pending', 'processing', 'succeeded', 'failed')")
-
     # 1. Accounts table (no dependencies)
     op.create_table(
         'accounts',

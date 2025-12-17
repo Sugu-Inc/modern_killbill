@@ -24,7 +24,7 @@ from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision = '20251121_encrypt'
-down_revision = '20251119_0849_d9b53e139c31'
+down_revision = 'd9b53e139c31'
 branch_labels = None
 depends_on = None
 
@@ -50,8 +50,7 @@ def upgrade() -> None:
 
     for table_name, comment in critical_tables:
         connection.execute(
-            text(f"COMMENT ON TABLE {table_name} IS :comment"),
-            {"comment": comment}
+            text(f"COMMENT ON TABLE {table_name} IS '{comment}'")
         )
 
     # Create a metadata table to track encryption verification
